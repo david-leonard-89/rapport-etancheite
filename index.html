@@ -6,17 +6,17 @@
     <title>Mon Générateur de Rapport</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 10px; }
-        .toolbar { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 20px; }
-        .block { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; position: relative; }
+        body { font-family: sans-serif; padding-top: 80px; }
+        .toolbar { position: fixed; top: 0; width: 100%; background: #f8f9fa; padding: 10px; display: flex; gap: 5px; z-index: 1000; border-bottom: 1px solid #ccc; }
+        .block { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; position: relative; background: white; }
         .del-btn { position: absolute; top: 5px; right: 5px; color: red; cursor: pointer; font-weight: bold; }
-        textarea { width: 90%; margin-top: 5px; }
-        img { max-width: 100px; display: block; }
+        .view-mode { font-size: 1.2em; white-space: pre-wrap; }
+        .edit-mode { display: block; width: 90%; }
+        button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h2>Éditeur de Rapport</h2>
     <div class="toolbar">
         <button onclick="addBlock('h1')">Titre</button>
         <button onclick="addBlock('h2')">S-Titre</button>
@@ -25,34 +25,43 @@
     </div>
 
     <div id="content-area"></div>
-    <br>
-    <button onclick="generatePDF()" style="background: green; color: white; padding: 15px;">Générer le PDF</button>
+    <div style="padding: 20px;"><button onclick="generatePDF()" style="background: green; color: white;">Générer PDF Final</button></div>
 
     <script>
         function addBlock(type) {
-            const area = document.getElementById('content-area');
             const div = document.createElement('div');
             div.className = 'block';
             div.dataset.type = type;
-
             div.innerHTML = `<span class="del-btn" onclick="this.parentElement.remove()">X</span>`;
-
+            
             if (type === 'img') {
-                div.innerHTML += `<input type="file" accept="image/*" onchange="previewImg(this)">`;
+                div.innerHTML += `<input type="file" accept="image/*" multiple onchange="handleImages(this)">`;
             } else {
-                div.innerHTML += `<textarea placeholder="Saisir ${type}..."></textarea>`;
+                div.innerHTML += `<div class="edit-mode"><textarea placeholder="Saisir ${type}..."></textarea><button onclick="validate(this)">Valider</button></div><div class="view-mode" style="display:none;"></div>`;
             }
-            area.appendChild(div);
+            document.getElementById('content-area').appendChild(div);
         }
 
-        function previewImg(input) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                input.parentElement.appendChild(img);
-            };
-            reader.readAsDataURL(input.files[0]);
+        function validate(btn) {
+            const block = btn.parentElement.parentElement;
+            const text = btn.previousElementSibling.value;
+            block.querySelector('.view-mode').innerText = text;
+            block.querySelector('.view-mode').style.display = 'block';
+            block.querySelector('.edit-mode').style.display = 'none';
+        }
+
+        function handleImages(input) {
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.maxWidth = "100%";
+                    input.parentElement.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+            input.style.display = 'none'; // Cache l'input après choix
         }
 
         async function generatePDF() {
@@ -60,32 +69,26 @@
             const doc = new jsPDF();
             let y = 20;
 
-            const blocks = document.querySelectorAll('.block');
-            blocks.forEach(block => {
+            document.querySelectorAll('.block').forEach(block => {
                 const type = block.dataset.type;
-                if (type === 'h1') {
-                    doc.setFontSize(22);
-                    doc.text(block.querySelector('textarea').value, 10, y);
-                    y += 15;
-                } else if (type === 'h2') {
-                    doc.setFontSize(16);
-                    doc.text(block.querySelector('textarea').value, 10, y);
-                    y += 10;
-                } else if (type === 'p') {
-                    doc.setFontSize(12);
-                    const lines = doc.splitTextToSize(block.querySelector('textarea').value, 180);
+                if (type === 'h1' || type === 'h2' || type === 'p') {
+                    const text = block.querySelector('.view-mode').innerText;
+                    doc.setFontSize(type === 'h1' ? 22 : type === 'h2' ? 16 : 12);
+                    const lines = doc.splitTextToSize(text, 180);
                     doc.text(lines, 10, y);
-                    y += (lines.length * 7);
+                    y += (lines.length * 8) + 10;
                 } else if (type === 'img') {
-                    const img = block.querySelector('img');
-                    if (img) {
-                        doc.addImage(img.src, 'JPEG', 10, y, 100, 75);
-                        y += 85;
-                    }
+                    block.querySelectorAll('img').forEach(img => {
+                        const ratio = img.naturalWidth / img.naturalHeight;
+                        const w = 100;
+                        const h = 100 / ratio;
+                        if (y + h > 280) { doc.addPage(); y = 20; }
+                        doc.addImage(img.src, 'JPEG', 10, y, w, h);
+                        y += h + 10;
+                    });
                 }
-                if (y > 270) { doc.addPage(); y = 20; }
             });
-            doc.save("mon-rapport.pdf");
+            doc.save("rapport.pdf");
         }
     </script>
 </body>
