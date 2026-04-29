@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Album PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; text-align: center; }
+        #gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0; }
+        .thumb { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
+        button { padding: 15px 30px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Ajouter plusieurs photos</h2>
+    <input type="file" id="upload" accept="image/*" multiple>
+    <div id="gallery"></div>
+    <br>
+    <button onclick="downloadPDF()">Télécharger le PDF complet</button>
+
+    <script>
+        const gallery = document.getElementById('gallery');
+        const images = []; // Tableau pour stocker les images
+
+        document.getElementById('upload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imgData = event.target.result;
+                    images.push(imgData); // Ajouter à notre liste
+                    
+                    // Créer une vignette visuelle
+                    const img = document.createElement('img');
+                    img.src = imgData;
+                    img.className = 'thumb';
+                    gallery.appendChild(img);
+                }
+                reader.readAsDataURL(files[i]);
+            }
+        });
+
+        async function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            for (let i = 0; i < images.length; i++) {
+                if (i > 0) doc.addPage(); // Ajouter une nouvelle page après la première
+                doc.text("Photo " + (i + 1), 10, 10);
+                doc.addImage(images[i], 'JPEG', 10, 20, 180, 150);
+            }
+            doc.save("mon-album.pdf");
+        }
+    </script>
+</body>
+</html>
