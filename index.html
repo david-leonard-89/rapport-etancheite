@@ -9,12 +9,11 @@
         body { font-family: sans-serif; padding-top: 70px; background: #f4f4f9; }
         .toolbar { position: fixed; top: 0; width: 100%; background: white; padding: 10px 5px; display: flex; align-items: center; gap: 8px; z-index: 1000; border-bottom: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .toolbar button { padding: 10px 12px; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
-        .btn-pdf { background: #28a745 !important; color: white; margin-left: auto; margin-right: 15px; }
+        .btn-pdf { background: #28a745 !important; color: white; margin-left: auto; margin-right: 15px; font-weight: bold; }
         
         .block { border: 1px solid #ccc; margin: 10px; background: white; border-radius: 8px; position: relative; }
         .del-btn { position: absolute; top: 5px; right: 5px; color: #ff4d4d; cursor: pointer; font-weight: bold; }
         
-        /* Paddings hiérarchisés */
         .block[data-type="h1"] { padding: 25px; }
         .block[data-type="h2"] { padding: 20px; }
         .block[data-type="p"] { padding: 15px; }
@@ -24,8 +23,8 @@
         .h2-view { font-size: 18px; font-weight: bold; color: #444; text-transform: uppercase; }
         .p-view { font-size: 15px; line-height: 1.6; }
         
-        .img-grid { display: grid; gap: 8px; }
-        .img-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; }
+        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .img-grid img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -50,7 +49,6 @@
             if (type === 'img') {
                 div.innerHTML += `<input type="file" accept="image/*" multiple onchange="handleImages(this)"><div class="img-grid"></div>`;
             } else {
-                // Le bouton valider est obligatoire pour le texte/titre
                 div.innerHTML += `<div class="edit-mode"><textarea placeholder="Saisir ${type}..." style="width:90%; min-height:50px"></textarea><br><button onclick="validate(this)">Valider</button></div>
                                   <div class="view-mode ${type}-view" style="display:none;" onclick="editBlock(this)"></div>`;
             }
@@ -74,10 +72,7 @@
 
         function handleImages(input) {
             const grid = input.parentElement.querySelector('.img-grid');
-            const files = Array.from(input.files);
-            grid.style.gridTemplateColumns = `repeat(${Math.min(files.length, 3)}, 1fr)`;
-            
-            files.forEach(file => {
+            Array.from(input.files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
@@ -92,22 +87,28 @@
         async function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            let y = 20;
+            let y = 30;
 
             document.querySelectorAll('.block').forEach(block => {
                 const type = block.dataset.type;
                 if (type === 'h1' || type === 'h2' || type === 'p') {
                     const text = block.querySelector('.view-mode').innerText;
+                    if (y > 250) { doc.addPage(); y = 20; }
                     doc.setFontSize(type === 'h1' ? 22 : type === 'h2' ? 16 : 12);
-                    doc.text(doc.splitTextToSize(text, 180), 10, y);
+                    doc.text(doc.splitTextToSize(type === 'h1' || type === 'h2' ? text.toUpperCase() : text, 180), 10, y);
                     y += (type === 'h1' ? 20 : type === 'h2' ? 15 : 10);
                 } else if (type === 'img') {
                     const imgs = block.querySelectorAll('img');
+                    let x = 10;
                     imgs.forEach((img, i) => {
-                        doc.addImage(img.src, 'JPEG', 10 + (i%3)*65, y, 60, 45);
-                        if (i % 3 === 2) y += 50;
+                        const ratio = img.naturalHeight / img.naturalWidth;
+                        const w = 55; const h = w * ratio;
+                        if (x + w > 200) { x = 10; y += 70; }
+                        if (y + h > 280) { doc.addPage(); y = 20; }
+                        doc.addImage(img.src, 'JPEG', x, y, w, h);
+                        x += w + 5;
                     });
-                    y += 50;
+                    y += 70;
                 }
             });
             doc.save("mon-rapport.pdf");
