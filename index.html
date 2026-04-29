@@ -6,25 +6,18 @@
     <title>Générateur de Rapport</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding-top: 70px; background: #f4f4f9; }
-        .toolbar { position: fixed; top: 0; width: 100%; background: white; padding: 10px 5px; display: flex; align-items: center; gap: 8px; z-index: 1000; border-bottom: 1px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .toolbar button { padding: 10px 12px; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
-        .btn-pdf { background: #28a745 !important; color: white; margin-left: auto; margin-right: 15px; font-weight: bold; }
+        body { font-family: sans-serif; padding-top: 70px; background: #f0f2f5; margin: 0; }
+        .toolbar { position: fixed; top: 0; width: 100%; background: #fff; padding: 10px; display: flex; justify-content: space-around; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .block { background: white; margin: 10px; padding: 15px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .del-btn { position: absolute; top: 10px; right: 10px; color: #ff4d4f; font-weight: bold; cursor: pointer; }
         
-        .block { border: 1px solid #ccc; margin: 10px; background: white; border-radius: 8px; position: relative; }
-        .del-btn { position: absolute; top: 5px; right: 5px; color: #ff4d4d; cursor: pointer; font-weight: bold; }
+        .h1-view { font-size: 20px; font-weight: 800; text-transform: uppercase; margin: 10px 0; }
+        .h2-view { font-size: 16px; font-weight: 600; text-transform: uppercase; margin: 8px 0; color: #555; }
+        .p-view { font-size: 14px; line-height: 1.5; color: #333; }
         
-        .block[data-type="h1"] { padding: 25px; }
-        .block[data-type="h2"] { padding: 20px; }
-        .block[data-type="p"] { padding: 15px; }
-        .block[data-type="img"] { padding: 10px; }
-        
-        .h1-view { font-size: 24px; font-weight: bold; text-transform: uppercase; }
-        .h2-view { font-size: 18px; font-weight: bold; color: #444; text-transform: uppercase; }
-        .p-view { font-size: 15px; line-height: 1.6; }
-        
-        .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .img-grid img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* Grille adaptative */
+        .img-grid { display: grid; gap: 5px; margin-top: 10px; }
+        .img-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -34,84 +27,87 @@
         <button onclick="addBlock('h2')">S-Titre</button>
         <button onclick="addBlock('p')">Texte</button>
         <button onclick="addBlock('img')">Photo</button>
-        <button class="btn-pdf" onclick="generatePDF()">PDF</button>
+        <button onclick="generatePDF()" style="background: green; color:white;">PDF</button>
     </div>
 
     <div id="content-area"></div>
 
     <script>
         function addBlock(type) {
+            const area = document.getElementById('content-area');
             const div = document.createElement('div');
             div.className = 'block';
             div.dataset.type = type;
-            div.innerHTML = `<span class="del-btn" onclick="this.parentElement.remove()">X</span>`;
+            div.innerHTML = `<span class="del-btn" onclick="this.parentElement.remove()">✕</span>`;
             
             if (type === 'img') {
-                div.innerHTML += `<input type="file" accept="image/*" multiple onchange="handleImages(this)"><div class="img-grid"></div>`;
+                div.innerHTML += `<input type="file" multiple accept="image/*" onchange="handleImages(this)"><div class="img-grid"></div>`;
             } else {
-                div.innerHTML += `<div class="edit-mode"><textarea placeholder="Saisir ${type}..." style="width:90%; min-height:50px"></textarea><br><button onclick="validate(this)">Valider</button></div>
-                                  <div class="view-mode ${type}-view" style="display:none;" onclick="editBlock(this)"></div>`;
+                div.innerHTML += `<div class="edit"><textarea placeholder="Saisir ${type}..."></textarea><br><button onclick="validate(this)">Valider</button></div><div class="view" style="display:none;" onclick="this.previousElementSibling.style.display='block'; this.style.display='none';"></div>`;
             }
-            document.getElementById('content-area').appendChild(div);
-        }
-
-        function validate(btn) {
-            const block = btn.closest('.block');
-            const val = block.querySelector('textarea').value;
-            const view = block.querySelector('.view-mode');
-            view.innerText = val;
-            view.style.display = 'block';
-            block.querySelector('.edit-mode').style.display = 'none';
-        }
-
-        function editBlock(el) {
-            el.style.display = 'none';
-            const block = el.closest('.block');
-            block.querySelector('.edit-mode').style.display = 'block';
+            area.appendChild(div);
+            window.scrollTo(0, document.body.scrollHeight);
         }
 
         function handleImages(input) {
-            const grid = input.parentElement.querySelector('.img-grid');
-            Array.from(input.files).forEach(file => {
+            const grid = input.nextElementSibling;
+            const files = Array.from(input.files);
+            const len = files.length;
+            
+            // Logique de grille adaptative
+            if (len === 1) grid.style.gridTemplateColumns = "1fr";
+            else if (len === 2 || len === 4) grid.style.gridTemplateColumns = "1fr 1fr";
+            else grid.style.gridTemplateColumns = "1fr 1fr 1fr";
+
+            files.forEach(f => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
                     grid.appendChild(img);
                 };
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(f);
             });
             input.style.display = 'none';
+        }
+
+        function validate(btn) {
+            const block = btn.closest('.block');
+            const view = block.querySelector('.view');
+            view.className = 'view ' + block.dataset.type + '-view';
+            view.innerText = block.querySelector('textarea').value;
+            view.style.display = 'block';
+            block.querySelector('.edit').style.display = 'none';
         }
 
         async function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            let y = 30;
+            let y = 20;
 
-            document.querySelectorAll('.block').forEach(block => {
-                const type = block.dataset.type;
-                if (type === 'h1' || type === 'h2' || type === 'p') {
-                    const text = block.querySelector('.view-mode').innerText;
-                    if (y > 250) { doc.addPage(); y = 20; }
-                    doc.setFontSize(type === 'h1' ? 22 : type === 'h2' ? 16 : 12);
-                    doc.text(doc.splitTextToSize(type === 'h1' || type === 'h2' ? text.toUpperCase() : text, 180), 10, y);
-                    y += (type === 'h1' ? 20 : type === 'h2' ? 15 : 10);
-                } else if (type === 'img') {
-                    const imgs = block.querySelectorAll('img');
-                    let x = 10;
+            document.querySelectorAll('.block').forEach(b => {
+                if(y > 270) { doc.addPage(); y = 20; }
+                
+                if (b.dataset.type !== 'img') {
+                    doc.setFontSize(b.dataset.type==='h1'?20:16);
+                    doc.text(doc.splitTextToSize(b.querySelector('.view').innerText, 180), 10, y);
+                    y += 20;
+                } else {
+                    const imgs = b.querySelectorAll('img');
+                    const len = imgs.length;
+                    const cols = (len === 1) ? 1 : (len === 2 || len === 4) ? 2 : 3;
+                    const w = (180 - (cols - 1) * 5) / cols;
+
                     imgs.forEach((img, i) => {
-                        const ratio = img.naturalHeight / img.naturalWidth;
-                        const w = 55; const h = w * ratio;
-                        if (x + w > 200) { x = 10; y += 70; }
-                        if (y + h > 280) { doc.addPage(); y = 20; }
-                        doc.addImage(img.src, 'JPEG', x, y, w, h);
-                        x += w + 5;
+                        const x = 10 + (i % cols) * (w + 5);
+                        if (i > 0 && i % cols === 0) y += (w * 0.75) + 5;
+                        if (y + (w * 0.75) > 280) { doc.addPage(); y = 20; }
+                        doc.addImage(img.src, 'JPEG', x, y, w, w * 0.75);
                     });
-                    y += 70;
+                    y += (w * 0.75) + 15;
                 }
             });
-            doc.save("mon-rapport.pdf");
+            doc.save("rapport.pdf");
         }
     </script>
 </body>
