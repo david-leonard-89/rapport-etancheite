@@ -3,55 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Album PDF</title>
+    <title>Mon Générateur de Rapport</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; }
-        #gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px 0; }
-        .thumb { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
-        button { padding: 15px 30px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        body { font-family: sans-serif; padding: 10px; }
+        .toolbar { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 20px; }
+        .block { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; position: relative; }
+        .del-btn { position: absolute; top: 5px; right: 5px; color: red; cursor: pointer; font-weight: bold; }
+        textarea { width: 90%; margin-top: 5px; }
+        img { max-width: 100px; display: block; }
     </style>
 </head>
 <body>
 
-    <h2>Ajouter plusieurs photos</h2>
-    <input type="file" id="upload" accept="image/*" multiple>
-    <div id="gallery"></div>
+    <h2>Éditeur de Rapport</h2>
+    <div class="toolbar">
+        <button onclick="addBlock('h1')">Titre</button>
+        <button onclick="addBlock('h2')">S-Titre</button>
+        <button onclick="addBlock('p')">Texte</button>
+        <button onclick="addBlock('img')">Photo</button>
+    </div>
+
+    <div id="content-area"></div>
     <br>
-    <button onclick="downloadPDF()">Télécharger le PDF complet</button>
+    <button onclick="generatePDF()" style="background: green; color: white; padding: 15px;">Générer le PDF</button>
 
     <script>
-        const gallery = document.getElementById('gallery');
-        const images = []; // Tableau pour stocker les images
+        function addBlock(type) {
+            const area = document.getElementById('content-area');
+            const div = document.createElement('div');
+            div.className = 'block';
+            div.dataset.type = type;
 
-        document.getElementById('upload').addEventListener('change', function(e) {
-            const files = e.target.files;
-            for (let i = 0; i < files.length; i++) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const imgData = event.target.result;
-                    images.push(imgData); // Ajouter à notre liste
-                    
-                    // Créer une vignette visuelle
-                    const img = document.createElement('img');
-                    img.src = imgData;
-                    img.className = 'thumb';
-                    gallery.appendChild(img);
-                }
-                reader.readAsDataURL(files[i]);
+            div.innerHTML = `<span class="del-btn" onclick="this.parentElement.remove()">X</span>`;
+
+            if (type === 'img') {
+                div.innerHTML += `<input type="file" accept="image/*" onchange="previewImg(this)">`;
+            } else {
+                div.innerHTML += `<textarea placeholder="Saisir ${type}..."></textarea>`;
             }
-        });
+            area.appendChild(div);
+        }
 
-        async function downloadPDF() {
+        function previewImg(input) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                input.parentElement.appendChild(img);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        async function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            for (let i = 0; i < images.length; i++) {
-                if (i > 0) doc.addPage(); // Ajouter une nouvelle page après la première
-                doc.text("Photo " + (i + 1), 10, 10);
-                doc.addImage(images[i], 'JPEG', 10, 20, 180, 150);
-            }
-            doc.save("mon-album.pdf");
+            let y = 20;
+
+            const blocks = document.querySelectorAll('.block');
+            blocks.forEach(block => {
+                const type = block.dataset.type;
+                if (type === 'h1') {
+                    doc.setFontSize(22);
+                    doc.text(block.querySelector('textarea').value, 10, y);
+                    y += 15;
+                } else if (type === 'h2') {
+                    doc.setFontSize(16);
+                    doc.text(block.querySelector('textarea').value, 10, y);
+                    y += 10;
+                } else if (type === 'p') {
+                    doc.setFontSize(12);
+                    const lines = doc.splitTextToSize(block.querySelector('textarea').value, 180);
+                    doc.text(lines, 10, y);
+                    y += (lines.length * 7);
+                } else if (type === 'img') {
+                    const img = block.querySelector('img');
+                    if (img) {
+                        doc.addImage(img.src, 'JPEG', 10, y, 100, 75);
+                        y += 85;
+                    }
+                }
+                if (y > 270) { doc.addPage(); y = 20; }
+            });
+            doc.save("mon-rapport.pdf");
         }
     </script>
 </body>
