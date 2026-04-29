@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Rapport</title>
+    <title>Rapport Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+        /* --- CSS SÉPARÉ POUR LISIBILITÉ --- */
         body { font-family: sans-serif; padding-top: 70px; background: #f0f2f5; margin: 0; }
         .toolbar { position: fixed; top: 0; width: 100%; background: #fff; padding: 10px; display: flex; justify-content: space-around; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .block { background: white; margin: 10px; padding: 15px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .block { background: white; margin: 10px; padding: 15px; border-radius: 12px; position: relative; }
         .del-btn { position: absolute; top: 10px; right: 10px; color: #ff4d4f; font-weight: bold; cursor: pointer; }
         
         .h1-view { font-size: 20px; font-weight: 800; text-transform: uppercase; margin: 10px 0; }
-        .h2-view { font-size: 16px; font-weight: 600; text-transform: uppercase; margin: 8px 0; color: #555; }
-        .p-view { font-size: 14px; line-height: 1.5; color: #333; }
+        .h2-view { font-size: 16px; font-weight: 600; text-transform: uppercase; color: #555; }
+        .p-view { font-size: 14px; line-height: 1.5; }
         
-        /* Grille adaptative */
-        .img-grid { display: grid; gap: 5px; margin-top: 10px; }
-        .img-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; }
+        /* LE TRICK GRID AUTO */
+        .img-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+            gap: 10px; 
+            margin-top: 10px; 
+        }
+        .img-grid img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; }
     </style>
-    <link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
 </head>
 <body>
 
@@ -36,6 +39,7 @@
     <div id="content-area"></div>
 
     <script>
+        // --- LOGIQUE JS ---
         function addBlock(type) {
             const area = document.getElementById('content-area');
             const div = document.createElement('div');
@@ -52,17 +56,18 @@
             window.scrollTo(0, document.body.scrollHeight);
         }
 
+        function validate(btn) {
+            const block = btn.closest('.block');
+            const view = block.querySelector('.view');
+            view.className = 'view ' + block.dataset.type + '-view';
+            view.innerText = block.querySelector('textarea').value;
+            view.style.display = 'block';
+            block.querySelector('.edit').style.display = 'none';
+        }
+
         function handleImages(input) {
             const grid = input.nextElementSibling;
-            const files = Array.from(input.files);
-            const len = files.length;
-            
-            // Logique de grille adaptative
-            if (len === 1) grid.style.gridTemplateColumns = "1fr";
-            else if (len === 2 || len === 4) grid.style.gridTemplateColumns = "1fr 1fr";
-            else grid.style.gridTemplateColumns = "1fr 1fr 1fr";
-
-            files.forEach(f => {
+            Array.from(input.files).forEach(f => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
@@ -74,21 +79,13 @@
             input.style.display = 'none';
         }
 
-        function validate(btn) {
-            const block = btn.closest('.block');
-            const view = block.querySelector('.view');
-            view.className = 'view ' + block.dataset.type + '-view';
-            view.innerText = block.querySelector('textarea').value;
-            view.style.display = 'block';
-            block.querySelector('.edit').style.display = 'none';
-        }
-
+        // --- PDF AVEC NATURAL RATIO ---
         async function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             let y = 20;
 
-            document.querySelectorAll('.block').forEach(b => {
+            for (const b of document.querySelectorAll('.block')) {
                 if(y > 270) { doc.addPage(); y = 20; }
                 
                 if (b.dataset.type !== 'img') {
@@ -97,20 +94,25 @@
                     y += 20;
                 } else {
                     const imgs = b.querySelectorAll('img');
-                    const len = imgs.length;
-                    const cols = (len === 1) ? 1 : (len === 2 || len === 4) ? 2 : 3;
-                    const w = (180 - (cols - 1) * 5) / cols;
-
-                    imgs.forEach((img, i) => {
-                        const x = 10 + (i % cols) * (w + 5);
-                        if (i > 0 && i % cols === 0) y += (w * 0.75) + 5;
-                        if (y + (w * 0.75) > 280) { doc.addPage(); y = 20; }
-                        doc.addImage(img.src, 'JPEG', x, y, w, w * 0.75);
-                    });
-                    y += (w * 0.75) + 15;
+                    // On définit une largeur cible pour les images dans le PDF
+                    const targetWidth = 50; 
+                    let x = 10;
+                    
+                    for (const img of imgs) {
+                        // Utilisation du ratio naturel pour éviter la distorsion
+                        const ratio = img.naturalHeight / img.naturalWidth;
+                        const h = targetWidth * ratio;
+                        
+                        if (x + targetWidth > 200) { x = 10; y += 60; }
+                        if (y + h > 280) { doc.addPage(); y = 20; }
+                        
+                        doc.addImage(img.src, 'JPEG', x, y, targetWidth, h);
+                        x += targetWidth + 5;
+                    }
+                    y += 60;
                 }
-            });
-            doc.save("rapport.pdf");
+            }
+            doc.save("rapport-etancheite.pdf");
         }
     </script>
 </body>
