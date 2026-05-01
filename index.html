@@ -80,71 +80,63 @@
         }
 
         async function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            let y = 20;
-            const pageWidth = 210;
-            const margin = 15;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 15; // Marge haute réduite
+    const pageWidth = 210;
+    const margin = 10; // Marges latérales réduites
 
-            const blocks = document.querySelectorAll('.block');
+    for (const b of document.querySelectorAll('.block')) {
+        const type = b.dataset.type;
+
+        if (type !== 'img') {
+            const text = b.querySelector('.view').innerText;
+            if (!text) continue;
             
-            for (const b of blocks) {
-                const type = b.dataset.type;
+            doc.setFontSize(type === 'h1' ? 18 : type === 'h2' ? 14 : 11);
+            const lines = doc.splitTextToSize(type === 'h1' || type === 'h2' ? text.toUpperCase() : text, pageWidth - (margin * 2));
+            
+            if (y + (lines.length * 6) > 285) { doc.addPage(); y = 15; }
+            doc.text(lines, margin, y);
+            y += (lines.length * 6) + 5; // Espacement réduit après le texte
+        } 
+        else {
+            const imgs = b.querySelectorAll('img');
+            if (imgs.length === 0) continue;
 
-                if (type !== 'img') {
-                    const text = b.querySelector('.view').innerText;
-                    if (!text) continue;
-                    
-                    doc.setFontSize(type === 'h1' ? 22 : type === 'h2' ? 16 : 12);
-                    const lines = doc.splitTextToSize(type === 'h1' || type === 'h2' ? text.toUpperCase() : text, pageWidth - (margin * 2));
-                    
-                    if (y + (lines.length * 7) > 280) { doc.addPage(); y = 20; }
-                    
-                    doc.text(lines, margin, y);
-                    y += (lines.length * 7) + 10;
-                } 
-                else {
-                    const imgs = b.querySelectorAll('img');
-                    if (imgs.length === 0) continue;
+            const nb = imgs.length;
+            // Choix du nombre de colonnes pour maximiser l'espace
+            const cols = (nb === 1) ? 1 : (nb === 2 || nb === 4) ? 2 : 3;
+            const gap = 3; // Gap très réduit
+            const imgW = (pageWidth - (margin * 2) - (gap * (cols - 1))) / cols;
+            
+            let rowH = 0;
+            let x = margin;
 
-                    const nbImgs = imgs.length;
-                    // Déterminer le nombre de colonnes (max 3)
-                    const cols = nbImgs === 1 ? 1 : (nbImgs === 2 || nbImgs === 4 ? 2 : 3);
-                    const gap = 5;
-                    const availableWidth = pageWidth - (margin * 2) - (gap * (cols - 1));
-                    const imgW = availableWidth / cols;
-                    
-                    let currentLineMaxH = 0;
-                    let x = margin;
+            for (let i = 0; i < nb; i++) {
+                const ratio = imgs[i].naturalHeight / imgs[i].naturalWidth;
+                const imgH = imgW * ratio;
 
-                    // Centrage si une seule image
-                    if(cols === 1) x = (pageWidth - imgW) / 2;
-
-                    for (let i = 0; i < imgs.length; i++) {
-                        const img = imgs[i];
-                        const ratio = img.naturalHeight / img.naturalWidth;
-                        const imgH = imgW * ratio;
-
-                        // Si nouvelle ligne nécessaire
-                        if (i > 0 && i % cols === 0) {
-                            y += currentLineMaxH + gap;
-                            currentLineMaxH = 0;
-                            x = margin;
-                        }
-
-                        // Saut de page si besoin
-                        if (y + imgH > 280) { doc.addPage(); y = 20; }
-
-                        doc.addImage(img.src, 'JPEG', x, y, imgW, imgH);
-                        
-                        if (imgH > currentLineMaxH) currentLineMaxH = imgH;
-                        x += imgW + gap;
-                    }
-                    y += currentLineMaxH + 15; // Fin du bloc photo
+                if (i > 0 && i % cols === 0) {
+                    y += rowH + gap;
+                    rowH = 0;
+                    x = margin;
                 }
+
+                if (y + imgH > 285) { doc.addPage(); y = 15; }
+                
+                doc.addImage(imgs[i].src, 'JPEG', x, y, imgW, imgH);
+                
+                if (imgH > rowH) rowH = imgH;
+                x += imgW + gap;
             }
-            doc.save("rapport.pdf");
+            y += rowH + 2; // Espacement réduit après le bloc photo
         }
+    }
+    doc.save("rapport-etancheite.pdf");
+        }
+        
+        
     </script>
 </body>
 </html>
