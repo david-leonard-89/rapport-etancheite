@@ -3,52 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Rapport Étanchéité</title>
+    <title>Expert Rapport Étanchéité</title>
     <style>
-        /* --- STYLE INTERFACE (ÉCRAN UNIQUEMENT) --- */
-        @media screen {
-            body { background: #e0e0e0; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; }
-            .toolbar { position: fixed; top: 0; width: 100%; background: #2c3e50; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 1000; }
-            .toolbar button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: #ecf0f1; }
-            .btn-pdf { background: #27ae60 !important; color: white; }
-            
-            /* La "feuille" A4 sur l'écran */
-            #paper { 
-                width: 210mm; 
-                min-height: 297mm; 
-                padding: 15mm; 
-                margin: 10px auto; 
-                background: white; 
-                box-shadow: 0 0 10px rgba(0,0,0,0.3);
-                box-sizing: border-box;
-            }
-            .del-btn { color: red; cursor: pointer; font-size: 12px; float: right; border: 1px solid red; padding: 2px 5px; border-radius: 3px; }
+        /* --- INTERFACE ÉDITEUR --- */
+        :root { --p-width: 210mm; --p-height: 297mm; }
+        body { background: #3a3a3a; margin: 0; padding-top: 70px; font-family: 'Helvetica', sans-serif; }
+        
+        .toolbar { 
+            position: fixed; top: 0; width: 100%; background: #1a1a1a; padding: 10px; 
+            display: flex; justify-content: center; gap: 10px; z-index: 2000; 
+        }
+        .toolbar button { 
+            background: #444; color: white; border: 1px solid #666; padding: 8px 15px; 
+            border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+        .btn-pdf { background: #27ae60 !important; border: none !important; }
+
+        /* --- STRUCTURE DES PAGES --- */
+        #container { display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; }
+        
+        .page {
+            width: var(--p-width);
+            height: var(--p-height);
+            background: white;
+            margin-bottom: 20px;
+            padding: 15mm;
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden; /* Empêche le débordement invisible */
         }
 
-        /* --- STYLE DU RAPPORT (ÉCRAN + PDF) --- */
-        #paper { font-family: Arial, sans-serif; color: #000; line-height: 1.4; }
-        
-        .block { margin-bottom: 15px; clear: both; position: relative; }
-        
-        h1 { font-size: 22pt; text-transform: uppercase; margin: 10px 0; border-bottom: 2px solid #000; }
-        h2 { font-size: 16pt; text-transform: uppercase; margin: 8px 0; color: #333; }
-        p { font-size: 11pt; margin: 5px 0; white-space: pre-wrap; }
+        /* Indicateur de débordement (Le fameux "blanc" ou saut de ligne forcé) */
+        .page::after {
+            content: "FIN DE PAGE";
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(255, 0, 0, 0.1); color: red;
+            text-align: center; font-size: 10px; border-top: 1px dashed red;
+            pointer-events: none;
+        }
 
-        /* Grille Photo Intelligente */
+        /* --- CONTENU DU RAPPORT --- */
+        .block { margin-bottom: 5mm; position: relative; border: 1px solid transparent; transition: 0.2s; }
+        .block:hover { border: 1px dashed #4facfe; }
+        
+        .del-btn { 
+            position: absolute; right: -40px; top: 0; color: #ff4d4d; 
+            cursor: pointer; background: white; border-radius: 50%; width: 25px; height: 25px;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        h1 { font-size: 22pt; text-transform: uppercase; margin: 10px 0; border-bottom: 2px solid #000; }
+        h2 { font-size: 16pt; text-transform: uppercase; margin: 8px 0; color: #444; border-bottom: 1px solid #eee; }
+        p { font-size: 11pt; margin: 5px 0; white-space: pre-wrap; word-wrap: break-word; }
+
         .img-grid { 
-            display: grid; 
-            gap: 8px; 
-            margin-top: 10px;
+            display: grid; gap: 5px; margin-top: 5px;
             grid-template-columns: repeat(var(--cols, 1), 1fr);
         }
-        .img-grid img { width: 100%; height: auto; border-radius: 2px; display: block; }
+        .img-grid img { width: 100%; height: auto; object-fit: cover; display: block; }
 
-        /* Gestion des sauts de page PDF */
+        /* Zone d'édition (visible seulement à l'écran) */
+        .edit-zone { background: #f1faff; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
+        textarea { width: 100%; border: 1px solid #bedfff; border-radius: 3px; padding: 8px; font-size: 14px; }
+
+        /* --- RENDU PDF / IMPRESSION --- */
         @media print {
-            .toolbar, .del-btn, input[type="file"], .btn-validate { display: none !important; }
-            body { background: white; padding: 0; margin: 0; }
-            #paper { width: 100%; margin: 0; padding: 10mm; box-shadow: none; }
-            .block { page-break-inside: avoid; } /* Évite de couper une photo en deux */
+            body { background: white; padding: 0; }
+            .toolbar, .del-btn, .edit-zone, .page::after { display: none !important; }
+            #container { display: block; }
+            .page { 
+                margin: 0 !important; box-shadow: none !important; 
+                page-break-after: always; width: 100%; height: var(--p-height);
+            }
+        }
+
+        /* Adaptation mobile de l'éditeur */
+        @media screen and (max-width: 210mm) {
+            #container { transform: scale(calc(100vw / 230)); transform-origin: top center; }
+            body { padding-top: 10px; }
+            .toolbar { position: static; margin-bottom: 110px; flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -62,63 +96,53 @@
         <button class="btn-pdf" onclick="window.print()">GÉNÉRER PDF</button>
     </div>
 
-    <div id="paper">
-        </div>
+    <div id="container">
+        <div class="page" id="page-1"></div>
+    </div>
 
     <script>
+        let currentPageId = 1;
+
         function addBlock(type) {
-            const paper = document.getElementById('paper');
+            const activePage = document.getElementById(`page-${currentPageId}`);
             const div = document.createElement('div');
             div.className = 'block';
             div.dataset.type = type;
 
-            let html = `<span class="del-btn" onclick="this.parentElement.remove()">Supprimer</span>`;
+            let html = `<span class="del-btn" onclick="removeBlock(this)">✕</span>`;
 
             if (type === 'img') {
-                html += `<input type="file" multiple accept="image/*" onchange="handleImages(this)">
-                         <div class="img-grid"></div>`;
+                html += `<div class="edit-zone"><input type="file" multiple accept="image/*" onchange="handleImages(this)"></div><div class="img-grid"></div>`;
             } else {
-                html += `<div class="edit-zone">
-                            <textarea style="width:100%;" placeholder="Saisir ${type}..."></textarea>
-                            <button class="btn-validate" onclick="validate(this)">OK</button>
-                         </div>
-                         <div class="view-zone" style="display:none;" onclick="edit(this)"></div>`;
+                html += `<div class="edit-zone"><textarea placeholder="Saisir ${type}..."></textarea><button onclick="validate(this)">OK</button></div><div class="view-zone" style="display:none;" onclick="edit(this)"></div>`;
             }
 
             div.innerHTML = html;
-            paper.appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth' });
+            activePage.appendChild(div);
+            checkOverflow(activePage);
         }
 
         function validate(btn) {
-            const block = btn.parentElement;
+            const block = btn.closest('.block');
             const text = block.querySelector('textarea').value;
-            const viewZone = block.nextElementSibling;
-            const type = btn.closest('.block').dataset.type;
-
-            // Applique le style selon le type
-            const tag = (type === 'h1') ? 'h1' : (type === 'h2') ? 'h2' : 'p';
-            viewZone.innerHTML = `<${tag}>${text}</${tag}>`;
+            const view = block.querySelector('.view-zone');
+            const tag = (block.dataset.type === 'h1') ? 'h1' : (block.dataset.type === 'h2') ? 'h2' : 'p';
             
-            block.style.display = 'none';
-            viewZone.style.display = 'block';
+            view.innerHTML = `<${tag}>${text}</${tag}>`;
+            block.querySelector('.edit-zone').style.display = 'none';
+            view.style.display = 'block';
+            checkOverflow(block.parentElement);
         }
 
-        function edit(viewZone) {
-            viewZone.style.display = 'none';
-            viewZone.previousElementSibling.style.display = 'block';
+        function edit(view) {
+            view.style.display = 'none';
+            view.previousElementSibling.style.display = 'block';
         }
 
         function handleImages(input) {
-            const grid = input.nextElementSibling;
+            const grid = input.parentElement.nextElementSibling;
             const files = Array.from(input.files);
-            const count = files.length;
-
-            // Logique de grille selon ton souhait
-            let cols = 3;
-            if (count === 1) cols = 1;
-            else if (count === 2 || count === 4) cols = 2;
-            
+            let cols = files.length === 1 ? 1 : (files.length === 2 || files.length === 4 ? 2 : 3);
             grid.style.setProperty('--cols', cols);
 
             files.forEach(file => {
@@ -127,10 +151,33 @@
                     const img = document.createElement('img');
                     img.src = e.target.result;
                     grid.appendChild(img);
+                    setTimeout(() => checkOverflow(grid.closest('.page')), 200);
                 };
                 reader.readAsDataURL(file);
             });
-            input.style.display = 'none';
+            input.parentElement.style.display = 'none';
+        }
+
+        function checkOverflow(page) {
+            // Si le contenu dépasse la hauteur de la page (297mm soit environ 1122px)
+            if (page.scrollHeight > page.clientHeight + 2) {
+                const nextPageId = parseInt(page.id.split('-')[1]) + 1;
+                if (!document.getElementById(`page-${nextPageId}`)) {
+                    const newPage = document.createElement('div');
+                    newPage.className = 'page';
+                    newPage.id = `page-${nextPageId}`;
+                    document.getElementById('container').appendChild(newPage);
+                    currentPageId = nextPageId;
+                }
+                // Optionnel : On peut déplacer automatiquement le dernier bloc, 
+                // mais ici on laisse l'utilisateur voir le dépassement en rouge.
+            }
+        }
+
+        function removeBlock(btn) {
+            const page = btn.closest('.page');
+            btn.parentElement.remove();
+            // Si une page devient vide (sauf la première), on peut la supprimer
         }
     </script>
 </body>
