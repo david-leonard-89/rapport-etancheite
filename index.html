@@ -3,140 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapport Étanchéité</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>App Rapport Étanchéité</title>
     <style>
-        body { font-family: sans-serif; padding-top: 70px; background: #f0f2f5; margin: 0; }
-        .toolbar { position: fixed; top: 0; width: 100%; background: #fff; padding: 10px; display: flex; justify-content: space-around; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .toolbar button { padding: 10px; border-radius: 5px; border: 1px solid #ddd; background: white; cursor: pointer; }
-        .block { background: white; margin: 10px; padding: 15px; border-radius: 12px; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .del-btn { position: absolute; top: 10px; right: 10px; color: #ff4d4f; font-weight: bold; cursor: pointer; }
+        /* --- STYLE INTERFACE (ÉCRAN UNIQUEMENT) --- */
+        @media screen {
+            body { background: #e0e0e0; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; }
+            .toolbar { position: fixed; top: 0; width: 100%; background: #2c3e50; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 1000; }
+            .toolbar button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; background: #ecf0f1; }
+            .btn-pdf { background: #27ae60 !important; color: white; }
+            
+            /* La "feuille" A4 sur l'écran */
+            #paper { 
+                width: 210mm; 
+                min-height: 297mm; 
+                padding: 15mm; 
+                margin: 10px auto; 
+                background: white; 
+                box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                box-sizing: border-box;
+            }
+            .del-btn { color: red; cursor: pointer; font-size: 12px; float: right; border: 1px solid red; padding: 2px 5px; border-radius: 3px; }
+        }
+
+        /* --- STYLE DU RAPPORT (ÉCRAN + PDF) --- */
+        #paper { font-family: Arial, sans-serif; color: #000; line-height: 1.4; }
         
-        .h1-view { font-size: 20px; font-weight: 800; text-transform: uppercase; margin: 10px 0; }
-        .h2-view { font-size: 16px; font-weight: 600; text-transform: uppercase; color: #555; }
-        .p-view { font-size: 14px; line-height: 1.5; }
+        .block { margin-bottom: 15px; clear: both; position: relative; }
         
-        .img-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; justify-items: center; }
-        .img-grid img { width: 100%; max-width: 250px; height: auto; border-radius: 6px; }
-        
-        textarea { width: 100%; box-sizing: border-box; min-height: 60px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; }
+        h1 { font-size: 22pt; text-transform: uppercase; margin: 10px 0; border-bottom: 2px solid #000; }
+        h2 { font-size: 16pt; text-transform: uppercase; margin: 8px 0; color: #333; }
+        p { font-size: 11pt; margin: 5px 0; white-space: pre-wrap; }
+
+        /* Grille Photo Intelligente */
+        .img-grid { 
+            display: grid; 
+            gap: 8px; 
+            margin-top: 10px;
+            grid-template-columns: repeat(var(--cols, 1), 1fr);
+        }
+        .img-grid img { width: 100%; height: auto; border-radius: 2px; display: block; }
+
+        /* Gestion des sauts de page PDF */
+        @media print {
+            .toolbar, .del-btn, input[type="file"], .btn-validate { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            #paper { width: 100%; margin: 0; padding: 10mm; box-shadow: none; }
+            .block { page-break-inside: avoid; } /* Évite de couper une photo en deux */
+        }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
-        <button onclick="addBlock('h1')">Titre</button>
-        <button onclick="addBlock('h2')">S-Titre</button>
-        <button onclick="addBlock('p')">Texte</button>
-        <button onclick="addBlock('img')">Photo</button>
-        <button onclick="generatePDF()" style="background: #28a745; color:white; border:none;">PDF</button>
+        <button onclick="addBlock('h1')">TITRE</button>
+        <button onclick="addBlock('h2')">S-TITRE</button>
+        <button onclick="addBlock('p')">TEXTE</button>
+        <button onclick="addBlock('img')">PHOTOS</button>
+        <button class="btn-pdf" onclick="window.print()">GÉNÉRER PDF</button>
     </div>
 
-    <div id="content-area"></div>
+    <div id="paper">
+        </div>
 
     <script>
         function addBlock(type) {
-            const area = document.getElementById('content-area');
+            const paper = document.getElementById('paper');
             const div = document.createElement('div');
             div.className = 'block';
             div.dataset.type = type;
-            div.innerHTML = `<span class="del-btn" onclick="this.parentElement.remove()">✕</span>`;
-            
+
+            let html = `<span class="del-btn" onclick="this.parentElement.remove()">Supprimer</span>`;
+
             if (type === 'img') {
-                div.innerHTML += `<input type="file" multiple accept="image/*" onchange="handleImages(this)"><div class="img-grid"></div>`;
+                html += `<input type="file" multiple accept="image/*" onchange="handleImages(this)">
+                         <div class="img-grid"></div>`;
             } else {
-                div.innerHTML += `<div class="edit"><textarea placeholder="Saisir ${type}..."></textarea><br><button onclick="validate(this)">Valider</button></div><div class="view" style="display:none;" onclick="editMode(this)"></div>`;
+                html += `<div class="edit-zone">
+                            <textarea style="width:100%;" placeholder="Saisir ${type}..."></textarea>
+                            <button class="btn-validate" onclick="validate(this)">OK</button>
+                         </div>
+                         <div class="view-zone" style="display:none;" onclick="edit(this)"></div>`;
             }
-            area.appendChild(div);
-            window.scrollTo(0, document.body.scrollHeight);
+
+            div.innerHTML = html;
+            paper.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
         }
 
         function validate(btn) {
-            const block = btn.closest('.block');
-            const view = block.querySelector('.view');
-            view.className = 'view ' + block.dataset.type + '-view';
-            view.innerText = block.querySelector('textarea').value;
-            view.style.display = 'block';
-            block.querySelector('.edit').style.display = 'none';
+            const block = btn.parentElement;
+            const text = block.querySelector('textarea').value;
+            const viewZone = block.nextElementSibling;
+            const type = btn.closest('.block').dataset.type;
+
+            // Applique le style selon le type
+            const tag = (type === 'h1') ? 'h1' : (type === 'h2') ? 'h2' : 'p';
+            viewZone.innerHTML = `<${tag}>${text}</${tag}>`;
+            
+            block.style.display = 'none';
+            viewZone.style.display = 'block';
         }
 
-        function editMode(view) {
-            view.style.display = 'none';
-            view.previousElementSibling.style.display = 'block';
+        function edit(viewZone) {
+            viewZone.style.display = 'none';
+            viewZone.previousElementSibling.style.display = 'block';
         }
 
         function handleImages(input) {
             const grid = input.nextElementSibling;
-            Array.from(input.files).forEach(f => {
+            const files = Array.from(input.files);
+            const count = files.length;
+
+            // Logique de grille selon ton souhait
+            let cols = 3;
+            if (count === 1) cols = 1;
+            else if (count === 2 || count === 4) cols = 2;
+            
+            grid.style.setProperty('--cols', cols);
+
+            files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
                     grid.appendChild(img);
                 };
-                reader.readAsDataURL(f);
+                reader.readAsDataURL(file);
             });
             input.style.display = 'none';
         }
-
-        async function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 15; // Marge haute réduite
-    const pageWidth = 210;
-    const margin = 10; // Marges latérales réduites
-
-    for (const b of document.querySelectorAll('.block')) {
-        const type = b.dataset.type;
-
-        if (type !== 'img') {
-            const text = b.querySelector('.view').innerText;
-            if (!text) continue;
-            
-            doc.setFontSize(type === 'h1' ? 18 : type === 'h2' ? 14 : 11);
-            const lines = doc.splitTextToSize(type === 'h1' || type === 'h2' ? text.toUpperCase() : text, pageWidth - (margin * 2));
-            
-            if (y + (lines.length * 6) > 285) { doc.addPage(); y = 15; }
-            doc.text(lines, margin, y);
-            y += (lines.length * 6) + 5; // Espacement réduit après le texte
-        } 
-        else {
-            const imgs = b.querySelectorAll('img');
-            if (imgs.length === 0) continue;
-
-            const nb = imgs.length;
-            // Choix du nombre de colonnes pour maximiser l'espace
-            const cols = (nb === 1) ? 1 : (nb === 2 || nb === 4) ? 2 : 3;
-            const gap = 3; // Gap très réduit
-            const imgW = (pageWidth - (margin * 2) - (gap * (cols - 1))) / cols;
-            
-            let rowH = 0;
-            let x = margin;
-
-            for (let i = 0; i < nb; i++) {
-                const ratio = imgs[i].naturalHeight / imgs[i].naturalWidth;
-                const imgH = imgW * ratio;
-
-                if (i > 0 && i % cols === 0) {
-                    y += rowH + gap;
-                    rowH = 0;
-                    x = margin;
-                }
-
-                if (y + imgH > 285) { doc.addPage(); y = 15; }
-                
-                doc.addImage(imgs[i].src, 'JPEG', x, y, imgW, imgH);
-                
-                if (imgH > rowH) rowH = imgH;
-                x += imgW + gap;
-            }
-            y += rowH + 2; // Espacement réduit après le bloc photo
-        }
-    }
-    doc.save("rapport-etancheite.pdf");
-        }
-        
-        
     </script>
 </body>
 </html>
