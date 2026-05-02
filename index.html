@@ -3,203 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapport Étanchéité Pro</title>
+    <title>Rapport Etanchéité Ultimate</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; }
+        body { background: #2c3e50; margin: 0; padding-top: 60px; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
         
-        body { background: #333; margin: 0; display: flex; flex-direction: column; align-items: center; font-family: Arial, sans-serif; }
-        
-        /* BARRE D'OUTILS */
-        .toolbar { 
-            position: fixed; top: 0; width: 100%; background: #111; padding: 10px; 
-            display: flex; justify-content: center; gap: 10px; z-index: 2000; 
-        }
-        .toolbar button { padding: 10px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
-        .btn-pdf { background: #27ae60; color: white; }
+        .toolbar { position: fixed; top: 0; width: 100%; background: #1a1a1a; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; }
+        .toolbar button { padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; background: #ecf0f1; }
+        .btn-pdf { background: #27ae60 !important; color: white; }
 
-        /* PAGES */
-        #container { margin-top: 70px; padding-bottom: 50px; }
+        #container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        
         .page {
             width: var(--p-width);
-            height: 296.8mm; /* Légèrement moins que 297 pour éviter la page blanche */
+            height: var(--p-height);
             background: white;
-            margin-bottom: 10px;
-            padding: 10mm;
+            margin-bottom: 20px;
+            padding: 15mm;
             box-sizing: border-box;
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            overflow: hidden; /* Empêche le débordement qui crée des pages blanches */
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
         }
 
-        /* BLOCS */
         .block { 
-            margin-bottom: 5mm; 
             position: relative; 
-            width: 100%; 
-            min-height: 10mm;
+            margin-bottom: 5mm; 
+            border: 1px solid transparent;
+            min-height: 20px;
         }
 
-        /* MODE ÉDITION : Redimensionnement manuel */
-        .edit-active { 
-            border: 2px dashed #3498db; 
-            overflow: auto; 
-            resize: vertical; /* Permet de tirer le coin en bas à droite */
-            padding-bottom: 15px;
+        /* POIGNÉE DE REDIMENSIONNEMENT */
+        .block.resizable {
+            border: 1px dashed #3498db;
+            overflow: hidden;
+            resize: vertical; /* Redimensionnement manuel vertical */
         }
 
-        h1 { font-size: 20pt; text-transform: uppercase; border-bottom: 2px solid #000; margin: 0 0 4mm 0; }
-        h2 { font-size: 14pt; text-transform: uppercase; margin: 0 0 2mm 0; }
+        .block.resizable::after {
+            content: "◢";
+            position: absolute; bottom: 0; right: 0;
+            color: #3498db; font-size: 12px; cursor: ns-resize;
+            pointer-events: none;
+        }
+
+        .del-btn { position: absolute; left: -30px; top: 0; color: red; cursor: pointer; font-weight: bold; }
+
+        h1 { font-size: 22pt; margin: 0; border-bottom: 2px solid #000; }
+        h2 { font-size: 16pt; margin: 0; }
         p { font-size: 11pt; margin: 0; white-space: pre-wrap; }
 
-        .img-grid { 
-            display: grid; gap: 2mm; width: 100%;
+        .img-container { 
+            display: grid; gap: 5px; 
+            width: 100%; height: 100%;
             grid-template-columns: repeat(var(--cols, 1), 1fr);
         }
-        .img-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; }
 
-        .del-btn { 
-            position: absolute; left: -30px; top: 0; color: red; 
-            font-weight: bold; cursor: pointer; display: block; 
-        }
+        .edit-zone { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+        textarea { width: 100%; min-height: 60px; }
 
         /* IMPRESSION SANS PAGES BLANCHES */
         @media print {
-            @page { margin: 0; size: A4; }
-            .toolbar, .del-btn, .edit-zone, button, input { display: none !important; }
-            body { background: white; }
-            #container { margin: 0; }
-            .page { 
-                margin: 0 !important; 
-                box-shadow: none !important; 
-                page-break-after: always; 
-                page-break-inside: avoid;
-                height: var(--p-height);
-            }
+            @page { size: A4; margin: 0; }
+            body { background: white; padding: 0; }
+            .toolbar, .del-btn, .edit-zone, button { display: none !important; }
+            .page { margin: 0; box-shadow: none; page-break-after: always; height: var(--p-height) !important; width: var(--p-width) !important; }
             .block { border: none !important; resize: none !important; }
         }
 
         /* MOBILE ZOOM */
         @media screen and (max-width: 210mm) {
-            #container { transform: scale(calc(100vw / 220mm)); transform-origin: top center; }
+            #container { transform: scale(calc(100vw / 225mm)); transform-origin: top center; }
         }
     </style>
 </head>
 <body>
 
-    <div class="toolbar">
-        <button onclick="addBlock('h1')">H1</button>
-        <button onclick="addBlock('h2')">H2</button>
-        <button onclick="addBlock('p')">TEXTE</button>
-        <button onclick="addBlock('img')">PHOTOS</button>
-        <button class="btn-pdf" onclick="window.print()">ENREGISTRER PDF</button>
-    </div>
+<div class="toolbar">
+    <button onclick="addBlock('h1')">H1</button>
+    <button onclick="addBlock('h2')">H2</button>
+    <button onclick="addBlock('p')">TEXTE</button>
+    <button onclick="addBlock('img')">PHOTOS</button>
+    <button class="btn-pdf" onclick="window.print()">GÉNÉRER PDF</button>
+</div>
 
-    <div id="container">
-        <div class="page" id="page-1"></div>
-    </div>
+<div id="container">
+    <div class="page" id="page-1"></div>
+</div>
 
-    <script>
-        let activePageId = 1;
+<script>
+    let pageCount = 1;
 
-        function addBlock(type) {
-            // On vérifie toujours si la page précédente peut accueillir le bloc
-            findBestPage();
-            
-            const page = document.getElementById(`page-${activePageId}`);
-            const div = document.createElement('div');
-            div.className = 'block edit-active'; 
-            div.dataset.type = type;
+    function addBlock(type) {
+        // Retour automatique à la page qui a de la place
+        const targetPage = findPageWithSpace();
+        const div = document.createElement('div');
+        div.className = 'block';
+        div.dataset.type = type;
 
-            let html = `<span class="del-btn" onclick="removeBlock(this)">✕</span>`;
-
-            if (type === 'img') {
-                html += `<div class="edit-zone"><input type="file" multiple onchange="handleImages(this)"></div><div class="img-grid"></div>`;
-            } else {
-                html += `<div class="edit-zone">
-                            <textarea style="width:100%;" placeholder="Saisir..."></textarea>
-                            <button onclick="validate(this)">OK</button>
-                         </div>
-                         <div class="view" style="display:none;" onclick="edit(this)"></div>`;
-            }
-
-            div.innerHTML = html;
-            page.appendChild(div);
+        let html = `<span class="del-btn" onclick="this.parentElement.remove()">✕</span>`;
+        if (type === 'img') {
+            html += `<div class="edit-zone"><input type="file" multiple onchange="loadImgs(this)"></div><div class="img-container"></div>`;
+        } else {
+            html += `<div class="edit-zone"><textarea></textarea><br><button onclick="validate(this)">VALIDER</button></div><div class="view-zone" style="display:none;" onclick="reEdit(this)"></div>`;
         }
 
-        function validate(btn) {
-            const block = btn.closest('.block');
-            const txt = block.querySelector('textarea').value;
-            const view = block.querySelector('.view');
-            const tag = block.dataset.type === 'h1' ? 'h1' : (block.dataset.type === 'h2' ? 'h2' : 'p');
-            
-            view.innerHTML = `<${tag}>${txt}</${tag}>`;
-            block.querySelector('.edit-zone').style.display = 'none';
-            view.style.display = 'block';
-            block.classList.remove('edit-active'); // On enlève la poignée de redimensionnement après validation
-            checkOverflow();
-        }
+        div.innerHTML = html;
+        targetPage.appendChild(div);
+    }
 
-        function edit(view) {
-            const block = view.closest('.block');
-            view.style.display = 'none';
-            block.querySelector('.edit-zone').style.display = 'block';
-            block.classList.add('edit-active'); // On remet la poignée pour ajuster
-        }
+    function validate(btn) {
+        const block = btn.closest('.block');
+        const txt = block.querySelector('textarea').value;
+        const view = block.querySelector('.view-zone');
+        const tag = block.dataset.type === 'h1' ? 'h1' : (block.dataset.type === 'h2' ? 'h2' : 'p');
+        
+        view.innerHTML = `<${tag}>${txt}</${tag}>`;
+        block.querySelector('.edit-zone').style.display = 'none';
+        view.style.display = 'block';
+        
+        // Rendre le bloc redimensionnable APRES validation
+        block.classList.add('resizable');
+        checkAutoPage(block.parentElement);
+    }
 
-        function handleImages(input) {
-            const grid = input.parentElement.nextElementSibling;
-            const block = input.closest('.block');
-            const files = Array.from(input.files);
-            let cols = files.length === 1 ? 1 : (files.length === 2 || files.length === 4 ? 2 : 3);
-            grid.style.setProperty('--cols', cols);
+    function reEdit(view) {
+        const block = view.closest('.block');
+        block.classList.remove('resizable');
+        view.style.display = 'none';
+        block.querySelector('.edit-zone').style.display = 'block';
+    }
 
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    grid.appendChild(img);
-                };
-                reader.readAsDataURL(file);
-            });
-            input.parentElement.style.display = 'none';
-            block.classList.remove('edit-active');
-            setTimeout(checkOverflow, 400);
-        }
+    function loadImgs(input) {
+        const container = input.parentElement.nextElementSibling;
+        const block = input.closest('.block');
+        const files = Array.from(input.files);
+        let cols = files.length === 1 ? 1 : (files.length === 2 || files.length === 4 ? 2 : 3);
+        container.style.setProperty('--cols', cols);
 
-        function checkOverflow() {
-            const page = document.getElementById(`page-${activePageId}`);
-            if (page.scrollHeight > page.clientHeight) {
-                const lastBlock = page.lastElementChild;
-                activePageId++;
-                let nextPage = document.getElementById(`page-${activePageId}`);
-                
-                if (!nextPage) {
-                    nextPage = document.createElement('div');
-                    nextPage.className = 'page';
-                    nextPage.id = `page-${activePageId}`;
-                    document.getElementById('container').appendChild(nextPage);
-                }
-                nextPage.appendChild(lastBlock);
-            }
-        }
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        input.parentElement.style.display = 'none';
+        block.classList.add('resizable'); // Permet de redimensionner la hauteur des photos
+        block.style.height = "80mm"; // Hauteur par défaut
+        checkAutoPage(block.parentElement);
+    }
 
-        function findBestPage() {
-            // Parcourt les pages depuis la 1 pour voir laquelle est vide ou a de la place
-            const pages = document.querySelectorAll('.page');
-            for (let i = 0; i < pages.length; i++) {
-                if (pages[i].scrollHeight < pages[i].clientHeight - 100) {
-                    activePageId = i + 1;
-                    return;
-                }
-            }
+    function findPageWithSpace() {
+        const pages = document.querySelectorAll('.page');
+        for (let p of pages) {
+            if (p.scrollHeight < p.clientHeight - 50) return p;
         }
+        return createNewPage();
+    }
 
-        function removeBlock(btn) {
-            const block = btn.parentElement;
-            block.remove();
-            findBestPage(); // Recalcule la page active après suppression
+    function createNewPage() {
+        pageCount++;
+        const p = document.createElement('div');
+        p.className = 'page';
+        p.id = `page-${pageCount}`;
+        document.getElementById('container').appendChild(p);
+        return p;
+    }
+
+    function checkAutoPage(page) {
+        if (page.scrollHeight > page.clientHeight) {
+            const last = page.lastElementChild;
+            const next = createNewPage();
+            next.appendChild(last);
         }
-    </script>
+    }
+</script>
 </body>
 </html>
