@@ -3,67 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rapport Expert v6 - Photos Inclues</title>
+    <title>Rapport Expert v7</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; }
         body { background: #1a1a1a; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
         
+        /* BARRE DE CRÉATION HAUTE */
         .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 2000; }
         .toolbar button { padding: 12px; border-radius: 8px; border: none; cursor: pointer; background: #fff; font-weight: bold; }
 
-        #paper { 
-            width: var(--p-width); min-height: var(--p-height); 
-            background: white; padding: 15mm; box-sizing: border-box; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.7); margin-bottom: 150px;
+        /* CONTENEUR DE PAGES */
+        #paper-container { 
+            width: var(--p-width); 
+            background: white; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.7); 
+            margin-bottom: 180px; /* Espace pour la barre fixe du bas */
             position: relative;
         }
 
-        .block { position: relative; margin-bottom: 10px; border: 1px solid transparent; cursor: pointer; }
-        .block.active { border: 2px solid #3498db; background: #f0f8ff; }
+        /* LIGNE DE DÉLIMITATION A4 VISUELLE */
+        .page-break-line {
+            position: absolute;
+            left: 0; width: 100%;
+            height: 2px;
+            background: rgba(255, 0, 0, 0.3);
+            border-top: 1px dashed red;
+            pointer-events: none;
+            z-index: 500;
+            display: flex;
+            justify-content: center;
+        }
+        .page-break-line::after {
+            content: "LIMITE PAGE A4";
+            background: red; color: white; font-size: 8px; padding: 2px 5px;
+            border-radius: 0 0 5px 5px; height: 10px;
+        }
+
+        #paper { width: 100%; padding: 15mm; box-sizing: border-box; min-height: var(--p-height); }
+
+        .block { position: relative; margin-bottom: 10px; border: 1px solid transparent; }
+        .block.active { border: 2px solid #3498db; background: #f0f8ff; box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
         
-        /* ZONES ÉDITION */
         .edit-zone { display: flex; flex-direction: column; gap: 10px; background: #f4f4f4; padding: 15px; border-radius: 8px; }
         textarea { width: 100%; border: 1px solid #ccc; padding: 12px; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px; }
         .btn-valid { background: #27ae60; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* GRILLE PHOTOS */
-        .img-grid { 
-            display: grid; gap: 5px; width: 100%; overflow: hidden;
-            grid-template-columns: repeat(var(--cols, 1), 1fr);
-        }
-        .img-grid img { width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+        .img-grid { display: grid; gap: 5px; width: 100%; overflow: hidden; grid-template-columns: repeat(var(--cols, 1), 1fr); }
+        .img-grid img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* PANNEAU DE CONTRÔLES */
+        /* BARRE DE RÉGLAGE FIXE EN BAS */
         .controls-panel { 
-            display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: #3498db; padding: 15px; border-radius: 12px; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5); z-index: 3000;
-            flex-direction: column; gap: 12px; width: 90%; max-width: 400px;
+            display: none; position: fixed; bottom: 0; left: 0; width: 100%;
+            background: #2c3e50; padding: 15px; border-top: 4px solid #3498db;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 3000;
+            flex-direction: column; gap: 10px; box-sizing: border-box;
         }
-        .block.active .controls-panel { display: flex; }
+        .active-block-exists .controls-panel { display: flex; }
         
-        .control-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .control-row label { color: white; font-weight: bold; font-size: 13px; flex: 1; text-transform: uppercase; }
+        .control-row { display: flex; justify-content: space-around; align-items: center; gap: 10px; }
+        .control-group { display: flex; align-items: center; gap: 10px; }
+        .control-group label { color: white; font-weight: bold; font-size: 11px; text-transform: uppercase; width: 50px; }
         
-        .ctrl-btn { width: 50px; height: 50px; background: white; color: #3498db; border: none; border-radius: 10px; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn-action { padding: 10px; border-radius: 8px; border: none; font-weight: bold; height: 50px; cursor: pointer; }
-        .btn-blue { background: #2980b9; color: white; }
-        .btn-green { background: #2ecc71; color: white; flex: 1; }
-        .btn-red { background: #e74c3c; color: white; }
+        .ctrl-btn { width: 55px; height: 50px; background: white; color: #3498db; border: none; border-radius: 10px; font-size: 24px; font-weight: bold; cursor: pointer; }
+        .btn-action { padding: 10px 15px; border-radius: 8px; border: none; font-weight: bold; height: 50px; cursor: pointer; }
+        .btn-blue { background: #3498db; color: white; }
+        .btn-green { background: #2ecc71; color: white; flex-grow: 1; font-size: 16px; }
+        .btn-red { background: #e74c3c; color: white; width: 50px; }
 
-        /* STYLES TEXTE */
+        /* TEXTE STYLES */
         h1 { margin: 0; font-size: 24pt; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 5px; }
         h2 { margin: 0; font-size: 18pt; font-weight: bold; }
         p { margin: 0; font-size: 12pt; white-space: pre-wrap; line-height: 1.5; }
 
         @media print {
-            .toolbar, .controls-panel, .edit-zone { display: none !important; }
+            .toolbar, .controls-panel, .edit-zone, .page-break-line { display: none !important; }
+            body { background: white; padding: 0; }
+            #paper-container { box-shadow: none; margin: 0; width: 100%; }
+            #paper { padding: 15mm; }
             .block.active { border: none !important; background: none !important; }
-            #paper { box-shadow: none; margin: 0; width: 100%; padding: 15mm; }
         }
 
         @media screen and (max-width: 210mm) {
-            #paper { transform: scale(calc(100vw / 225mm)); transform-origin: top center; }
+            #paper-container { transform: scale(calc(100vw / 220mm)); transform-origin: top center; }
         }
     </style>
 </head>
@@ -77,9 +98,36 @@
     <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
 </div>
 
-<div id="paper"></div>
+<div id="paper-container">
+    <div id="paper"></div>
+    <div class="page-break-line" style="top: 297mm;"></div>
+    <div class="page-break-line" style="top: 594mm;"></div>
+    <div class="page-break-line" style="top: 891mm;"></div>
+</div>
+
+<div id="master-controls" class="controls-panel" onclick="event.stopPropagation()">
+    <div class="control-row">
+        <div class="control-group">
+            <label id="label-size">Taille</label>
+            <button class="ctrl-btn" onclick="triggerSize(-1)">-</button>
+            <button class="ctrl-btn" onclick="triggerSize(1)">+</button>
+        </div>
+        <div class="control-group">
+            <label>Espace</label>
+            <button class="ctrl-btn" onclick="triggerMargin(-5)">-</button>
+            <button class="ctrl-btn" onclick="triggerMargin(5)">+</button>
+        </div>
+    </div>
+    <div class="control-row">
+        <button class="btn-action btn-blue" id="edit-btn" onclick="triggerEdit()">MODIFIER</button>
+        <button class="btn-action btn-green" onclick="closeAll()">TERMINER</button>
+        <button class="btn-action btn-red" onclick="triggerDelete()">✕</button>
+    </div>
+</div>
 
 <script>
+    let activeBlock = null;
+
     function addBlock(type) {
         const paper = document.getElementById('paper');
         const div = document.createElement('div');
@@ -87,53 +135,16 @@
         div.dataset.type = type;
         div.dataset.marginBottom = "10"; 
         
-        // Initialisation spécifique selon le type
-        if(type === 'img') {
-            div.dataset.height = "60"; // Hauteur initiale des photos en mm
-        } else {
-            div.dataset.fontSize = ""; 
-        }
+        if(type === 'img') div.dataset.height = "60"; 
+        else div.dataset.fontSize = ""; 
 
         div.onclick = function(e) { e.stopPropagation(); selectBlock(this); };
 
-        let contentHtml = "";
-        if(type === 'img') {
-            contentHtml = `
-                <div class="edit-zone">
-                    <input type="file" multiple accept="image/*" onchange="handleFiles(this)">
-                    <p style="font-size:10px; color:#666">Sélectionnez une ou plusieurs photos</p>
-                </div>
-                <div class="view-zone img-grid" style="display:none;"></div>
-            `;
-        } else {
-            contentHtml = `
-                <div class="edit-zone">
-                    <textarea placeholder="Saisir ${type}..."></textarea>
-                    <button class="btn-valid" onclick="validateText(event, this)">VALIDER LE CONTENU</button>
-                </div>
-                <div class="view-zone" style="display:none;"></div>
-            `;
-        }
+        let contentHtml = type === 'img' ? 
+            `<div class="edit-zone"><input type="file" multiple accept="image/*" onchange="handleFiles(this)"></div><div class="view-zone img-grid" style="display:none;"></div>` :
+            `<div class="edit-zone"><textarea placeholder="Saisir..."></textarea><button class="btn-valid" onclick="validateText(event, this)">OK</button></div><div class="view-zone" style="display:none;"></div>`;
 
-        div.innerHTML = contentHtml + `
-            <div class="controls-panel">
-                <div class="control-row">
-                    <label>${type === 'img' ? 'Hauteur Photo' : 'Taille Texte'}</label>
-                    <button class="ctrl-btn" onclick="changeSize(event, this, ${type === 'img' ? -10 : -2})">-</button>
-                    <button class="ctrl-btn" onclick="changeSize(event, this, ${type === 'img' ? 10 : 2})">+</button>
-                </div>
-                <div class="control-row">
-                    <label>Espace Bas</label>
-                    <button class="ctrl-btn" onclick="changeMargin(event, this, -5)">-</button>
-                    <button class="ctrl-btn" onclick="changeMargin(event, this, 5)">+</button>
-                </div>
-                <div class="control-row">
-                    ${type !== 'img' ? '<button class="btn-action btn-blue" onclick="reEdit(event, this)">MODIFIER</button>' : ''}
-                    <button class="btn-action btn-green" onclick="event.stopPropagation(); closeAll();">TERMINER</button>
-                    <button class="btn-action btn-red" onclick="this.closest('.block').remove()">✕</button>
-                </div>
-            </div>
-        `;
+        div.innerHTML = contentHtml;
         paper.appendChild(div);
     }
 
@@ -157,13 +168,10 @@
             reader.readAsDataURL(file);
         });
 
-        // Appliquer hauteur mémorisée
         view.style.height = block.dataset.height + "mm";
-        block.style.marginBottom = block.dataset.marginBottom + "px";
-
         block.querySelector('.edit-zone').style.display = 'none';
         view.style.display = 'grid';
-        closeAll();
+        selectBlock(block);
     }
 
     function validateText(e, btn) {
@@ -175,56 +183,66 @@
         
         view.innerHTML = `<${tag}>${txt}</${tag}>`;
         if(block.dataset.fontSize) view.firstElementChild.style.fontSize = block.dataset.fontSize;
-        block.style.marginBottom = block.dataset.marginBottom + "px";
-
+        
         block.querySelector('.edit-zone').style.display = 'none';
         view.style.display = 'block';
-        closeAll();
-    }
-
-    function changeSize(e, btn, delta) {
-        e.stopPropagation();
-        const block = btn.closest('.block');
-        const view = block.querySelector('.view-zone');
-        
-        if (block.dataset.type === 'img') {
-            let newH = Math.max(10, parseFloat(block.dataset.height) + delta);
-            view.style.height = newH + "mm";
-            block.dataset.height = newH;
-        } else {
-            const element = view.firstElementChild;
-            if (!element) return;
-            const currentSize = window.getComputedStyle(element).fontSize;
-            const newSize = (parseFloat(currentSize) + delta) + 'px';
-            element.style.fontSize = newSize;
-            block.dataset.fontSize = newSize;
-        }
-    }
-
-    function changeMargin(e, btn, delta) {
-        e.stopPropagation();
-        const block = btn.closest('.block');
-        const newMargin = Math.max(0, parseFloat(block.dataset.marginBottom) + delta);
-        block.style.marginBottom = newMargin + "px";
-        block.dataset.marginBottom = newMargin;
+        selectBlock(block);
     }
 
     function selectBlock(el) {
         if (el.querySelector('.view-zone').style.display === 'none') return;
         closeAll();
+        activeBlock = el;
         el.classList.add('active');
+        document.body.classList.add('active-block-exists');
+        
+        // Mise à jour du label de la toolbar
+        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'Photo' : 'Texte';
+        document.getElementById('edit-btn').style.display = el.dataset.type === 'img' ? 'none' : 'block';
     }
 
     function closeAll() {
         document.querySelectorAll('.block').forEach(b => b.classList.remove('active'));
+        document.body.classList.remove('active-block-exists');
+        activeBlock = null;
     }
 
-    function reEdit(e, btn) {
-        e.stopPropagation();
-        const block = btn.closest('.block');
-        block.querySelector('.view-zone').style.display = 'none';
-        block.querySelector('.edit-zone').style.display = 'flex';
+    // Fonctions de la toolbar fixe
+    function triggerSize(delta) {
+        if(!activeBlock) return;
+        const view = activeBlock.querySelector('.view-zone');
+        if (activeBlock.dataset.type === 'img') {
+            let newH = Math.max(10, parseFloat(activeBlock.dataset.height) + (delta * 5));
+            view.style.height = newH + "mm";
+            activeBlock.dataset.height = newH;
+        } else {
+            const el = view.firstElementChild;
+            const currentSize = window.getComputedStyle(el).fontSize;
+            const newSize = (parseFloat(currentSize) + delta) + 'px';
+            el.style.fontSize = newSize;
+            activeBlock.dataset.fontSize = newSize;
+        }
+    }
+
+    function triggerMargin(delta) {
+        if(!activeBlock) return;
+        const newMargin = Math.max(0, parseFloat(activeBlock.dataset.marginBottom) + delta);
+        activeBlock.style.marginBottom = newMargin + "px";
+        activeBlock.dataset.marginBottom = newMargin;
+    }
+
+    function triggerEdit() {
+        if(!activeBlock) return;
+        activeBlock.querySelector('.view-zone').style.display = 'none';
+        activeBlock.querySelector('.edit-zone').style.display = 'flex';
         closeAll();
+    }
+
+    function triggerDelete() {
+        if(activeBlock && confirm('Supprimer ce bloc ?')) {
+            activeBlock.remove();
+            closeAll();
+        }
     }
 </script>
 </body>
