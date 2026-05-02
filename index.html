@@ -3,51 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapport Expert</title>
+    <title>Rapport Expert v2</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; }
-        body { background: #333; margin: 0; padding-top: 60px; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        body { background: #2c2c2c; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
         
-        /* BARRE D'OUTILS */
-        .toolbar { position: fixed; top: 0; width: 100%; background: #1a1a1a; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 2000; }
-        .toolbar button { padding: 8px 15px; border-radius: 4px; border: none; cursor: pointer; background: #eee; font-weight: bold; }
+        .toolbar { position: fixed; top: 0; width: 100%; background: #111; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; }
+        .toolbar button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; background: #fff; font-weight: bold; }
 
         #paper { 
             width: var(--p-width); min-height: var(--p-height); 
             background: white; padding: 15mm; box-sizing: border-box; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); margin-bottom: 50px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); margin-bottom: 100px;
         }
 
-        .block { position: relative; margin-bottom: 5px; group; }
+        .block { position: relative; margin-bottom: 5px; transition: background 0.3s; }
+        .block:hover { background: #fdfdfd; }
         
         /* ÉDITION */
-        .edit-zone { display: flex; gap: 5px; background: #f4f4f4; padding: 10px; border-radius: 5px; align-items: center; }
-        textarea { flex-grow: 1; border: 1px solid #ccc; padding: 8px; border-radius: 4px; font-family: inherit; }
-        .btn-valid { background: #27ae60; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .edit-zone { display: flex; gap: 8px; background: #eef2f5; padding: 12px; border-radius: 8px; align-items: center; }
+        textarea { flex-grow: 1; border: 1px solid #cbd5e0; padding: 10px; border-radius: 6px; font-size: 16px; font-family: inherit; }
+        .btn-valid { background: #2ecc71; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* RÉGLAGE TAILLE (Invisible à l'impression) */
-        .size-controls { 
-            position: absolute; right: -80px; top: 0; 
-            display: flex; flex-direction: column; gap: 2px; 
+        /* PANNEAU DE CONTRÔLES (Sous le bloc) */
+        .controls-panel { 
+            display: flex; flex-wrap: wrap; gap: 15px; background: #444; color: white; 
+            padding: 10px; border-radius: 0 0 8px 8px; margin-top: -2px; justify-content: center;
         }
-        .size-controls button { width: 30px; height: 30px; cursor: pointer; background: #444; color: white; border: none; border-radius: 3px; }
-        .del-block { color: #ff4d4d; font-size: 10px; cursor: pointer; text-align: center; margin-top: 5px; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-group label { font-size: 12px; text-transform: uppercase; opacity: 0.8; }
+        
+        .ctrl-btn { 
+            width: 44px; height: 44px; /* Plus gros pour le tactile */
+            background: #666; color: white; border: none; border-radius: 6px; 
+            font-size: 20px; font-weight: bold; cursor: pointer; 
+        }
+        .ctrl-btn:active { background: #888; }
+        .del-block { background: #e74c3c !important; font-size: 14px !important; }
 
         /* STYLES TEXTE */
-        h1 { margin: 0; font-size: 24pt; text-transform: uppercase; border-bottom: 2px solid black; line-height: 1.2; }
-        h2 { margin: 0; font-size: 18pt; line-height: 1.2; } /* Pas de uppercase ici */
+        h1 { margin: 0; font-size: 24pt; text-transform: uppercase; border-bottom: 2px solid black; line-height: 1.2; padding-bottom: 5px; }
+        h2 { margin: 0; font-size: 18pt; line-height: 1.2; }
         p { margin: 0; font-size: 11pt; white-space: pre-wrap; line-height: 1.4; }
 
         @media print {
             @page { size: A4; margin: 0; }
             body { background: white; padding: 0; }
-            .toolbar, .size-controls, .edit-zone, .del-block { display: none !important; }
+            .toolbar, .controls-panel, .edit-zone { display: none !important; }
             #paper { box-shadow: none; margin: 0; width: 100%; padding: 15mm; }
         }
 
-        /* ZOOM MOBILE */
+        /* ZOOM MOBILE POUR L'ÉDITION */
         @media screen and (max-width: 210mm) {
-            #paper { transform: scale(calc(100vw / 225mm)); transform-origin: top center; }
+            #paper { transform: scale(calc(100vw / 220mm)); transform-origin: top center; }
         }
     </style>
 </head>
@@ -56,8 +64,8 @@
 <div class="toolbar">
     <button onclick="addBlock('h1')">H1</button>
     <button onclick="addBlock('h2')">H2</button>
-    <button onclick="addBlock('p')">PARAGRAPHE</button>
-    <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
+    <button onclick="addBlock('p')">TEXTE</button>
+    <button style="background:#2ecc71; color:white" onclick="window.print()">PDF</button>
 </div>
 
 <div id="paper"></div>
@@ -71,14 +79,22 @@
 
         div.innerHTML = `
             <div class="edit-zone">
-                <textarea placeholder="Saisir ${type}..." onkeydown="handleKey(event, this)"></textarea>
+                <textarea placeholder="Texte ${type}..." onkeydown="handleKey(event, this)"></textarea>
                 <button class="btn-valid" onclick="validate(this)">OK</button>
             </div>
             <div class="view-zone" style="display:none;" onclick="reEdit(this)"></div>
-            <div class="size-controls" style="display:none;">
-                <button onclick="changeSize(this, 1)">+</button>
-                <button onclick="changeSize(this, -1)">-</button>
-                <span class="del-block" onclick="this.closest('.block').remove()">Suppr.</span>
+            <div class="controls-panel" style="display:none;">
+                <div class="control-group">
+                    <label>Taille</label>
+                    <button class="ctrl-btn" onclick="changeSize(this, -1)">-</button>
+                    <button class="ctrl-btn" onclick="changeSize(this, 1)">+</button>
+                </div>
+                <div class="control-group">
+                    <label>Espace</label>
+                    <button class="ctrl-btn" onclick="changeMargin(this, -2)">-</button>
+                    <button class="ctrl-btn" onclick="changeMargin(this, 2)">+</button>
+                </div>
+                <button class="ctrl-btn del-block" onclick="this.closest('.block').remove()">✕</button>
             </div>
         `;
         paper.appendChild(div);
@@ -86,7 +102,6 @@
 
     function handleKey(e, el) {
         const type = el.closest('.block').dataset.type;
-        // Si c'est H1 ou H2, Entrée valide
         if ((type === 'h1' || type === 'h2') && e.key === 'Enter') {
             e.preventDefault();
             validate(el.nextElementSibling);
@@ -104,22 +119,30 @@
         
         block.querySelector('.edit-zone').style.display = 'none';
         view.style.display = 'block';
-        block.querySelector('.size-controls').style.display = 'flex';
+        block.querySelector('.controls-panel').style.display = 'flex';
     }
 
     function reEdit(view) {
         const block = view.closest('.block');
         view.style.display = 'none';
         block.querySelector('.edit-zone').style.display = 'flex';
-        block.querySelector('.size-controls').style.display = 'none';
+        block.querySelector('.controls-panel').style.display = 'none';
     }
 
     function changeSize(btn, delta) {
         const view = btn.closest('.block').querySelector('.view-zone').firstElementChild;
-        // On récupère la taille actuelle
         const currentSize = window.getComputedStyle(view).fontSize;
         const newSize = parseFloat(currentSize) + delta;
-        view.style.fontSize = newSize + 'pt';
+        view.style.fontSize = newSize + 'px'; // Utilisation de px pour plus de précision écran/bouton
+    }
+
+    function changeMargin(btn, delta) {
+        const block = btn.closest('.block');
+        // On récupère la marge actuelle du bas
+        const currentMargin = window.getComputedStyle(block).marginBottom;
+        const newMargin = parseFloat(currentMargin) + delta;
+        // On limite à 0 minimum
+        block.style.marginBottom = Math.max(0, newMargin) + 'px';
     }
 </script>
 </body>
