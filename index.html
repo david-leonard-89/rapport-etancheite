@@ -3,51 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rapport Expert v9</title>
+    <title>Rapport Expert Mobile-First</title>
     <style>
-        :root { --p-width: 210mm; --p-height: 297mm; }
-        body { background: #1a1a1a; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; }
+        :root { --p-width: 210mm; --p-height: 297mm; --blue: #3498db; --dark: #2c3e50; }
+        body { background: #1a1a1a; margin: 0; padding-top: 70px; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 2000; }
-        .toolbar button { padding: 10px; border-radius: 8px; border: none; cursor: pointer; background: #fff; font-weight: bold; }
+        /* BARRE DE CRÉATION (HAUT) */
+        .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; }
+        .toolbar button { flex: 1; max-width: 80px; height: 45px; border-radius: 8px; border: none; font-weight: bold; font-size: 12px; }
 
-        #paper-container { width: var(--p-width); background: white; margin: 20px auto 250px auto; position: relative; min-height: var(--p-height); box-shadow: 0 0 30px rgba(0,0,0,0.7); }
-        
+        /* PAPIER */
+        #paper-container { width: var(--p-width); background: white; margin: 0 auto 300px auto; position: relative; min-height: var(--p-height); transform-origin: top center; }
         #paper { width: 100%; padding: 15mm; box-sizing: border-box; display: flex; flex-direction: column; }
 
-        .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; box-sizing: border-box; display: block; overflow: hidden; }
-        .block.active { border: 2px solid #3498db; background: #f0f8ff; }
+        .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; width: 100%; box-sizing: border-box; }
+        .block.active { border: 2px solid var(--blue); background: #f0f8ff; }
         
-        /* GRILLE PHOTO */
         .img-grid { display: grid; gap: 8px; width: 100%; }
-        .img-grid div { width: 100%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .img-grid div { width: 100%; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .img-grid img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* TOOLBAR FIXE COMPACTE */
+        /* TOOLBAR DE RÉGLAGE (BAS) - RÉELLEMENT MOBILE */
         .controls-panel { 
             display: none; position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #2c3e50; padding: 10px; border-top: 4px solid #3498db;
-            z-index: 3000; flex-direction: column; gap: 8px;
+            background: var(--dark); border-top: 4px solid var(--blue);
+            z-index: 3000; padding: 15px 10px; box-sizing: border-box;
+            flex-direction: column; gap: 12px;
         }
         .active-block-exists .controls-panel { display: flex; }
         
-        .control-row { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: nowrap; }
-        .btn-group { display: flex; align-items: center; background: #34495e; border-radius: 10px; padding: 2px; }
-        .btn-group label { color: white; font-size: 9px; padding: 0 8px; text-transform: uppercase; font-weight: bold; }
+        .control-row { display: flex; width: 100%; gap: 10px; align-items: center; }
+        .btn-group { display: flex; flex: 1; align-items: center; background: #34495e; border-radius: 12px; overflow: hidden; }
+        .btn-group label { color: white; font-size: 10px; flex: 1; text-align: center; font-weight: bold; text-transform: uppercase; }
         
-        .ctrl-btn { width: 45px; height: 45px; background: white; color: #3498db; border: 1px solid #ddd; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; margin: 2px; }
-        .btn-action { height: 45px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; padding: 0 15px; }
-        .btn-align { background: #f39c12; min-width: 80px; }
-        .btn-green { background: #2ecc71; flex-grow: 1; }
-        .btn-red { background: #e74c3c; width: 45px; }
+        .ctrl-btn { width: 55px; height: 55px; background: white; color: var(--blue); border: none; font-size: 24px; font-weight: bold; }
+        .btn-action { height: 55px; border-radius: 12px; border: none; font-weight: bold; color: white; flex: 1; font-size: 14px; }
+        .btn-align { background: #f39c12; }
+        .btn-green { background: #2ecc71; flex: 2; }
+        .btn-red { background: #e74c3c; width: 55px; }
 
-        /* LIGNE DE COUPE */
+        /* REPERE PAGE */
         .page-break-line { position: absolute; left: 0; width: 100%; height: 1px; border-top: 2px dashed rgba(255,0,0,0.3); pointer-events: none; }
 
         @media print {
             .toolbar, .controls-panel, .page-break-line { display: none !important; }
-            #paper-container { margin: 0; box-shadow: none; width: 100%; }
-            .block.active { border: none !important; background: none !important; }
+            #paper-container { margin: 0; transform: none !important; width: 100%; }
+        }
+
+        /* ZOOM AUTO MOBILE */
+        @media screen and (max-width: 210mm) {
+            #paper-container { transform: scale(calc(100vw / 215mm)); }
         }
     </style>
 </head>
@@ -64,30 +69,31 @@
 <div id="paper-container">
     <div id="paper"></div>
     <div class="page-break-line" style="top: 297mm;"></div>
-    <div class="page-break-line" style="top: 594mm;"></div>
 </div>
 
 <div id="master-controls" class="controls-panel" onclick="event.stopPropagation()">
     <div class="control-row">
         <div class="btn-group">
-            <label id="label-size">Taille</label>
             <button class="ctrl-btn" onclick="triggerSize(-1)">-</button>
+            <label id="label-size">TAILLE</label>
             <button class="ctrl-btn" onclick="triggerSize(1)">+</button>
         </div>
         <div class="btn-group">
-            <label>Largeur</label>
             <button class="ctrl-btn" onclick="triggerWidth(-10)">-</button>
+            <label>LARG.</label>
             <button class="ctrl-btn" onclick="triggerWidth(10)">+</button>
         </div>
     </div>
+    
     <div class="control-row">
         <div class="btn-group">
-            <label>Marge</label>
             <button class="ctrl-btn" onclick="triggerMargin(-5)">-</button>
+            <label>ESPACE</label>
             <button class="ctrl-btn" onclick="triggerMargin(5)">+</button>
         </div>
         <button class="btn-action btn-align" onclick="triggerAlign()">ALIGNER</button>
     </div>
+
     <div class="control-row">
         <button class="btn-action btn-green" onclick="closeAll()">TERMINER</button>
         <button class="btn-action btn-red" onclick="triggerDelete()">✕</button>
@@ -104,7 +110,7 @@
         div.dataset.type = type;
         div.dataset.marginBottom = "10"; 
         div.dataset.widthPercent = "100";
-        div.dataset.align = "center"; // center, left, right
+        div.dataset.align = "center";
         
         if(type === 'img') div.dataset.height = "60"; 
         else div.dataset.fontSize = "16"; 
@@ -112,8 +118,8 @@
         div.onclick = function(e) { e.stopPropagation(); selectBlock(this); };
 
         div.innerHTML = type === 'img' ? 
-            `<div class="edit-zone" style="padding:15px; text-align:center;"><input type="file" multiple accept="image/*" onchange="handleFiles(this)"></div><div class="view-zone img-grid" style="display:none;"></div>` :
-            `<div class="edit-zone" style="padding:10px;"><textarea style="width:100%; height:60px;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:10px; margin-top:5px; background:#27ae60; color:white; border:none;">OK</button></div><div class="view-zone" style="display:none;"></div>`;
+            `<div class="edit-zone" style="padding:20px; text-align:center;"><input type="file" multiple accept="image/*" onchange="handleFiles(this)" style="font-size:16px;"></div><div class="view-zone img-grid" style="display:none;"></div>` :
+            `<div class="edit-zone" style="padding:15px; background:#f4f4f4; border-radius:10px;"><textarea style="width:100%; height:100px; font-size:16px; border:1px solid #ccc;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:15px; margin-top:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold;">VALIDER LE TEXTE</button></div><div class="view-zone" style="display:none;"></div>`;
 
         paper.appendChild(div);
     }
@@ -123,11 +129,9 @@
         const view = block.querySelector('.view-zone');
         const files = Array.from(input.files);
         if(!files.length) return;
-
         view.innerHTML = "";
         let cols = files.length === 1 ? 1 : (files.length === 2 || files.length === 4 ? 2 : 3);
         view.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -138,7 +142,6 @@
             };
             reader.readAsDataURL(file);
         });
-
         block.querySelector('.edit-zone').style.display = 'none';
         view.style.display = 'grid';
         selectBlock(block);
@@ -157,12 +160,27 @@
         selectBlock(block);
     }
 
+    function applyStyles(block) {
+        block.style.width = block.dataset.widthPercent + "%";
+        block.style.marginBottom = block.dataset.marginBottom + "px";
+        const align = block.dataset.align;
+        block.style.marginLeft = (align === 'right' || align === 'center') ? 'auto' : '0';
+        block.style.marginRight = (align === 'left' || align === 'center') ? 'auto' : '0';
+
+        if(block.dataset.type === 'img') {
+            block.querySelectorAll('.img-grid div').forEach(d => d.style.height = block.dataset.height + "mm");
+        } else {
+            const el = block.querySelector('.view-zone').firstElementChild;
+            if(el) el.style.fontSize = block.dataset.fontSize + "pt";
+        }
+    }
+
     function selectBlock(el) {
         closeAll();
         activeBlock = el;
         el.classList.add('active');
         document.body.classList.add('active-block-exists');
-        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'Haut.' : 'Taille';
+        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'HAUT.' : 'TAILLE';
     }
 
     function closeAll() {
@@ -173,11 +191,8 @@
 
     function triggerSize(delta) {
         if(!activeBlock) return;
-        if (activeBlock.dataset.type === 'img') {
-            activeBlock.dataset.height = Math.max(10, parseFloat(activeBlock.dataset.height) + (delta * 10));
-        } else {
-            activeBlock.dataset.fontSize = Math.max(8, parseFloat(activeBlock.dataset.fontSize) + (delta * 2));
-        }
+        if (activeBlock.dataset.type === 'img') activeBlock.dataset.height = Math.max(10, parseFloat(activeBlock.dataset.height) + (delta * 10));
+        else activeBlock.dataset.fontSize = Math.max(8, parseFloat(activeBlock.dataset.fontSize) + (delta * 2));
         applyStyles(activeBlock);
     }
 
@@ -196,27 +211,8 @@
     function triggerAlign() {
         if(!activeBlock) return;
         const states = ['left', 'center', 'right'];
-        let idx = states.indexOf(activeBlock.dataset.align);
-        activeBlock.dataset.align = states[(idx + 1) % 3];
+        activeBlock.dataset.align = states[(states.indexOf(activeBlock.dataset.align) + 1) % 3];
         applyStyles(activeBlock);
-    }
-
-    function applyStyles(block) {
-        // Alignement
-        const align = block.dataset.align;
-        block.style.marginLeft = (align === 'right' || align === 'center') ? 'auto' : '0';
-        block.style.marginRight = (align === 'left' || align === 'center') ? 'auto' : '0';
-        
-        block.style.width = block.dataset.widthPercent + "%";
-        block.style.marginBottom = block.dataset.marginBottom + "px";
-
-        if(block.dataset.type === 'img') {
-            const divs = block.querySelectorAll('.img-grid div');
-            divs.forEach(d => d.style.height = block.dataset.height + "mm");
-        } else {
-            const textEl = block.querySelector('.view-zone').firstElementChild;
-            if(textEl) textEl.style.fontSize = block.dataset.fontSize + "pt";
-        }
     }
 
     function triggerDelete() {
