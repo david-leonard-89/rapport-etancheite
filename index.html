@@ -4,44 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
+
     <title>Expert Rapporteur</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; --blue: #3498db; --dark: #2c3e50; }
         
         body { 
-            background: #222; margin: 0; padding-top: 70px; 
+            background: #1a1a1a; margin: 0; padding-top: 70px; 
             font-family: sans-serif; display: flex; flex-direction: column; align-items: center;
         }
 
-        /* TOOLBAR HAUT - Icônes Aa */
+        /* TOOLBAR HAUT */
         .toolbar { 
             position: fixed; top: 0; width: 100%; background: #000; 
             padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; 
         }
         .toolbar button { 
             flex: 1; max-width: 70px; height: 50px; border-radius: 8px; border: none; 
-            font-weight: bold; cursor: pointer; background: #eee; font-size: 14px;
+            font-weight: bold; cursor: pointer; background: #eee;
         }
-        .btn-pdf { background: #27ae60 !important; color: white !important; }
 
-        /* MISE EN PAGE MOBILE - Le secret est ici */
+        /* MISE EN PAGE - LARGEUR FIXE */
         #viewport { width: 100%; display: flex; justify-content: center; padding-bottom: 250px; }
 
         #paper-container { 
             width: var(--p-width); background: white; position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            zoom: 0.45; /* Zoom adapté pour mobile sans casser le layout */
+            zoom: 0.46; /* Ajuste ce chiffre si c'est encore trop étroit ou trop large */
         }
-        /* Ajustement automatique pour tablettes/grands écrans */
-        @media screen and (min-width: 600px) { #paper-container { zoom: 0.8; } }
 
         #paper { width: 100%; padding: 15mm; box-sizing: border-box; min-height: var(--p-height); display: flex; flex-direction: column; }
 
-        /* DÉLIMITEURS A4 (FIXES) */
+        /* LIGNE ROUGE A4 */
         .page-break-line {
             position: absolute; left: 0; width: 100%; height: 2px;
             background: rgba(255, 0, 0, 0.2); border-top: 2px dashed red;
@@ -53,13 +52,12 @@
         }
 
         /* BLOCS */
-        .block { position: relative; margin-bottom: 15px; border: 2px solid transparent; min-height: 20px; }
-        .block.active { border: 4px solid var(--blue); background: #f0f8ff; box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); }
+        .block { position: relative; margin-bottom: 15px; border: 2px solid transparent; }
+        .block.active { border: 4px solid var(--blue); background: #f0f8ff; }
         
         .edit-zone { display: flex; flex-direction: column; gap: 15px; background: #f4f4f4; padding: 20px; border-radius: 10px; }
-        textarea { width: 100%; border: 1px solid #ccc; padding: 15px; border-radius: 8px; font-size: 20px; box-sizing: border-box; min-height: 120px; }
-        .btn-valid { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 10px; font-weight: bold; font-size: 18px; }
-
+        textarea { width: 100%; border: 1px solid #ccc; padding: 15px; font-size: 20px; border-radius: 8px; }
+        
         .img-grid { display: grid; gap: 8px; width: 100%; grid-template-columns: repeat(var(--cols, 1), 1fr); }
         .img-grid img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #ddd; }
 
@@ -67,8 +65,7 @@
         .controls-panel { 
             display: none; position: fixed; bottom: 0; left: 0; width: 100%;
             background: var(--dark); border-top: 4px solid var(--blue);
-            z-index: 3000; padding: 15px; box-sizing: border-box;
-            flex-direction: column; gap: 10px;
+            z-index: 3000; padding: 15px; box-sizing: border-box; flex-direction: column; gap: 10px;
         }
         .active-block-exists .controls-panel { display: flex; }
         .control-row { display: flex; width: 100%; gap: 10px; }
@@ -76,15 +73,14 @@
         .btn-group label { color: white; font-size: 10px; flex: 1; text-align: center; font-weight: bold; }
         .ctrl-btn { width: 50px; height: 100%; background: white; border: none; font-size: 20px; font-weight: bold; color: var(--blue); }
         .btn-action { height: 55px; border-radius: 10px; border: none; font-weight: bold; color: white; flex: 1; }
-        
+
         h1 { margin: 0; font-size: 28pt; }
         h2 { margin: 0; font-size: 20pt; }
-        p { margin: 0; font-size: 12pt; line-height: 1.4; }
+        p { margin: 0; font-size: 12pt; }
 
         @media print {
             .toolbar, .controls-panel, .page-break-line, .edit-zone { display: none !important; }
-            body { background: white; padding: 0; }
-            #paper-container { zoom: 1 !important; box-shadow: none; width: 210mm; }
+            #paper-container { zoom: 1 !important; width: 210mm; }
         }
     </style>
 </head>
@@ -95,7 +91,7 @@
     <button onclick="addBlock('h2')"><b style="font-size:14px">Aa</b></button>
     <button onclick="addBlock('p')">txt</button>
     <button onclick="addBlock('img')">IMG</button>
-    <button class="btn-pdf" onclick="window.print()">PDF</button>
+    <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
 </div>
 
 <div id="viewport">
@@ -103,7 +99,6 @@
         <div id="paper"></div>
         <div class="page-break-line" style="top: 297mm;"></div>
         <div class="page-break-line" style="top: 594mm;"></div>
-        <div class="page-break-line" style="top: 891mm;"></div>
     </div>
 </div>
 
@@ -121,14 +116,6 @@
         </div>
     </div>
     <div class="control-row">
-        <div class="btn-group">
-            <button class="ctrl-btn" onclick="triggerMargin(-5)">-</button>
-            <label>ESPACE</label>
-            <button class="ctrl-btn" onclick="triggerMargin(5)">+</button>
-        </div>
-        <button class="btn-action" style="background:#f39c12" onclick="triggerAlign()">ALIGNER</button>
-    </div>
-    <div class="control-row">
         <button class="btn-action" style="background:#2ecc71; flex:2" onclick="closeAll()">TERMINER</button>
         <button class="btn-action" style="background:#e74c3c; flex:0.5" onclick="triggerDelete()">✕</button>
     </div>
@@ -144,20 +131,17 @@
         div.dataset.type = type;
         div.dataset.marginBottom = "10"; 
         div.dataset.widthPercent = "100";
-        div.dataset.align = "left";
         div.dataset.fontSize = type === 'h1' ? "24" : (type === 'h2' ? "18" : "12");
         if(type === 'img') div.dataset.height = "80";
 
         div.onclick = function(e) { e.stopPropagation(); selectBlock(this); };
 
         div.innerHTML = type === 'img' ? 
-            `<div class="edit-zone">
-                <input type="file" multiple accept="image/*" onchange="handleFiles(this)" style="font-size:16px;">
-            </div><div class="view-zone img-grid" style="display:none;"></div>` :
-            `<div class="edit-zone">
-                <textarea placeholder="Saisir texte..."></textarea>
-                <button class="btn-valid" onclick="validateText(event, this)">VALIDER</button>
-            </div><div class="view-zone" style="display:none;"></div>`;
+            `<div class="edit-zone"><input type="file" multiple accept="image/*" onchange="handleFiles(this)"></div>
+             <div class="view-zone img-grid" style="display:none;"></div>` :
+            `<div class="edit-zone"><textarea placeholder="Texte..."></textarea>
+             <button class="btn-action" style="background:#2ecc71" onclick="validateText(event, this)">OK</button></div>
+             <div class="view-zone" style="display:none;"></div>`;
 
         paper.appendChild(div);
     }
@@ -166,7 +150,6 @@
         const block = input.closest('.block');
         const view = block.querySelector('.view-zone');
         const files = Array.from(input.files);
-        if(!files.length) return;
         view.innerHTML = "";
         block.style.setProperty('--cols', files.length > 1 ? (files.length === 2 || files.length === 4 ? 2 : 3) : 1);
         files.forEach(file => {
@@ -200,11 +183,6 @@
     function applyStyles(block) {
         block.style.width = block.dataset.widthPercent + "%";
         block.style.marginBottom = block.dataset.marginBottom + "px";
-        block.style.textAlign = block.dataset.align;
-        const align = block.dataset.align;
-        block.style.marginLeft = (align === 'right' || align === 'center') ? 'auto' : '0';
-        block.style.marginRight = (align === 'left' || align === 'center') ? 'auto' : '0';
-
         if(block.dataset.type === 'img') {
             block.querySelectorAll('.img-grid img').forEach(img => img.style.height = block.dataset.height + "mm");
         } else {
@@ -219,7 +197,6 @@
         activeBlock = el;
         el.classList.add('active');
         document.body.classList.add('active-block-exists');
-        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'PHOTO' : 'TAILLE';
     }
 
     function closeAll() {
@@ -238,19 +215,6 @@
     function triggerWidth(delta) {
         if(!activeBlock) return;
         activeBlock.dataset.widthPercent = Math.min(100, Math.max(10, parseFloat(activeBlock.dataset.widthPercent) + delta));
-        applyStyles(activeBlock);
-    }
-
-    function triggerMargin(delta) {
-        if(!activeBlock) return;
-        activeBlock.dataset.marginBottom = Math.max(0, parseFloat(activeBlock.dataset.marginBottom) + delta);
-        applyStyles(activeBlock);
-    }
-
-    function triggerAlign() {
-        if(!activeBlock) return;
-        const states = ['left', 'center', 'right'];
-        activeBlock.dataset.align = states[(states.indexOf(activeBlock.dataset.align) + 1) % 3];
         applyStyles(activeBlock);
     }
 
