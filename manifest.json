@@ -1,0 +1,10 @@
+{
+  "short_name": "RapportExp",
+  "name": "Expert Report Builder",
+  "icons": [],
+  "start_url": "ton_fichier.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#333333",
+  "theme_color": "#000000"
+}
