@@ -258,11 +258,5 @@
         if(activeBlock && confirm('Supprimer ?')) { activeBlock.remove(); closeAll(); }
     }
 </script>
-    <script>
-// Enregistre un mini service worker vide pour valider l'installation PWA
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('data:application/javascript,self.addEventListener("fetch",()=>{});');
-}
-    </script>
 </body>
 </html>
