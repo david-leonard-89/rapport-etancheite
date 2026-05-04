@@ -3,27 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rapport Expert Mobile-First</title>
+    <title>Rapport Expert - Mobile Fix</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; --blue: #3498db; --dark: #2c3e50; }
-        body { background: #1a1a1a; margin: 0; padding-top: 70px; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* BARRE DE CRÉATION (HAUT) */
-        .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; }
-        .toolbar button { flex: 1; max-width: 80px; height: 45px; border-radius: 8px; border: none; font-weight: bold; font-size: 12px; }
+        /* Fond sombre pour faire ressortir la feuille */
+        body { 
+            background: #333; 
+            margin: 0; 
+            padding-top: 70px; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            min-height: 100vh;
+        }
 
-        /* PAPIER */
-        #paper-container { width: var(--p-width); background: white; margin: 0 auto 300px auto; position: relative; min-height: var(--p-height); transform-origin: top center; }
+        /* BARRE DE CRÉATION */
+        .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 2000; }
+        .toolbar button { flex: 1; max-width: 80px; height: 45px; border-radius: 8px; border: none; font-weight: bold; font-size: 12px; cursor: pointer; }
+
+        /* CONTENEUR DE LA FEUILLE (Gestion du Zoom) */
+        #viewport {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow-x: hidden;
+            padding-bottom: 300px; /* Espace pour la barre de réglage */
+        }
+
+        #paper-container { 
+            width: var(--p-width); 
+            background: white; 
+            position: relative; 
+            min-height: var(--p-height); 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transform-origin: top center;
+        }
+
         #paper { width: 100%; padding: 15mm; box-sizing: border-box; display: flex; flex-direction: column; }
 
+        /* LIGNES DE LIMITE A4 */
+        .page-break-line { 
+            position: absolute; 
+            left: 0; 
+            width: 100%; 
+            height: 0;
+            border-top: 3px dashed #ff4757; 
+            pointer-events: none; 
+            z-index: 1000;
+        }
+        .page-break-line::after { 
+            content: "LIMITE PAGE A4"; 
+            position: absolute; 
+            right: 10px; 
+            top: -12px;
+            background: #ff4757; 
+            color: white; 
+            font-size: 10px; 
+            padding: 2px 8px; 
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* BLOCS */
         .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; width: 100%; box-sizing: border-box; }
         .block.active { border: 2px solid var(--blue); background: #f0f8ff; }
         
+        /* GRILLE PHOTO */
         .img-grid { display: grid; gap: 8px; width: 100%; }
         .img-grid div { width: 100%; background: #eee; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .img-grid img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* TOOLBAR DE RÉGLAGE (BAS) - RÉELLEMENT MOBILE */
+        /* TOOLBAR BAS (Inchangée selon tes souhaits) */
         .controls-panel { 
             display: none; position: fixed; bottom: 0; left: 0; width: 100%;
             background: var(--dark); border-top: 4px solid var(--blue);
@@ -31,28 +83,34 @@
             flex-direction: column; gap: 12px;
         }
         .active-block-exists .controls-panel { display: flex; }
-        
         .control-row { display: flex; width: 100%; gap: 10px; align-items: center; }
         .btn-group { display: flex; flex: 1; align-items: center; background: #34495e; border-radius: 12px; overflow: hidden; }
         .btn-group label { color: white; font-size: 10px; flex: 1; text-align: center; font-weight: bold; text-transform: uppercase; }
-        
         .ctrl-btn { width: 55px; height: 55px; background: white; color: var(--blue); border: none; font-size: 24px; font-weight: bold; }
         .btn-action { height: 55px; border-radius: 12px; border: none; font-weight: bold; color: white; flex: 1; font-size: 14px; }
         .btn-align { background: #f39c12; }
         .btn-green { background: #2ecc71; flex: 2; }
         .btn-red { background: #e74c3c; width: 55px; }
 
-        /* REPERE PAGE */
-        .page-break-line { position: absolute; left: 0; width: 100%; height: 1px; border-top: 2px dashed rgba(255,0,0,0.3); pointer-events: none; }
+        /* TEXTE STYLES */
+        h1 { margin: 0; font-size: 24pt; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 5px; }
+        h2 { margin: 0; font-size: 18pt; font-weight: bold; }
+        p { margin: 0; font-size: 12pt; white-space: pre-wrap; line-height: 1.5; }
 
         @media print {
-            .toolbar, .controls-panel, .page-break-line { display: none !important; }
-            #paper-container { margin: 0; transform: none !important; width: 100%; }
+            .toolbar, .controls-panel, .page-break-line, .edit-zone { display: none !important; }
+            body { background: white; padding: 0; }
+            #viewport { padding: 0; }
+            #paper-container { transform: none !important; box-shadow: none; margin: 0; width: 100%; }
+            .block.active { border: none !important; background: none !important; }
         }
 
-        /* ZOOM AUTO MOBILE */
+        /* ADAPTATION MOBILE ÉCRAN */
         @media screen and (max-width: 210mm) {
-            #paper-container { transform: scale(calc(100vw / 215mm)); }
+            #paper-container { 
+                /* Zoom pour que la feuille 210mm tienne dans la largeur du téléphone */
+                transform: scale(calc(100vw / 210mm)); 
+            }
         }
     </style>
 </head>
@@ -66,9 +124,14 @@
     <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
 </div>
 
-<div id="paper-container">
-    <div id="paper"></div>
-    <div class="page-break-line" style="top: 297mm;"></div>
+<div id="viewport">
+    <div id="paper-container">
+        <div id="paper"></div>
+        <div class="page-break-line" style="top: 297mm;"></div>
+        <div class="page-break-line" style="top: 594mm;"></div>
+        <div class="page-break-line" style="top: 891mm;"></div>
+        <div class="page-break-line" style="top: 1188mm;"></div>
+    </div>
 </div>
 
 <div id="master-controls" class="controls-panel" onclick="event.stopPropagation()">
@@ -84,7 +147,6 @@
             <button class="ctrl-btn" onclick="triggerWidth(10)">+</button>
         </div>
     </div>
-    
     <div class="control-row">
         <div class="btn-group">
             <button class="ctrl-btn" onclick="triggerMargin(-5)">-</button>
@@ -93,7 +155,6 @@
         </div>
         <button class="btn-action btn-align" onclick="triggerAlign()">ALIGNER</button>
     </div>
-
     <div class="control-row">
         <button class="btn-action btn-green" onclick="closeAll()">TERMINER</button>
         <button class="btn-action btn-red" onclick="triggerDelete()">✕</button>
@@ -119,7 +180,7 @@
 
         div.innerHTML = type === 'img' ? 
             `<div class="edit-zone" style="padding:20px; text-align:center;"><input type="file" multiple accept="image/*" onchange="handleFiles(this)" style="font-size:16px;"></div><div class="view-zone img-grid" style="display:none;"></div>` :
-            `<div class="edit-zone" style="padding:15px; background:#f4f4f4; border-radius:10px;"><textarea style="width:100%; height:100px; font-size:16px; border:1px solid #ccc;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:15px; margin-top:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold;">VALIDER LE TEXTE</button></div><div class="view-zone" style="display:none;"></div>`;
+            `<div class="edit-zone" style="padding:15px; background:#f4f4f4; border-radius:10px;"><textarea style="width:100%; height:100px; font-size:16px; border:1px solid #ccc;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:15px; margin-top:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold;">OK</button></div><div class="view-zone" style="display:none;"></div>`;
 
         paper.appendChild(div);
     }
@@ -176,6 +237,7 @@
     }
 
     function selectBlock(el) {
+        if (el.querySelector('.view-zone').style.display === 'none') return;
         closeAll();
         activeBlock = el;
         el.classList.add('active');
@@ -216,7 +278,7 @@
     }
 
     function triggerDelete() {
-        if(activeBlock && confirm('Supprimer ?')) { activeBlock.remove(); closeAll(); }
+        if(activeBlock && confirm('Supprimer ce bloc ?')) { activeBlock.remove(); closeAll(); }
     }
 </script>
 </body>
