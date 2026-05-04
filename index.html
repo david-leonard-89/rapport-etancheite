@@ -3,65 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rapport Expert v8 - Photo Control</title>
+    <title>Rapport Expert v9</title>
     <style>
         :root { --p-width: 210mm; --p-height: 297mm; }
-        body { background: #1a1a1a; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        body { background: #1a1a1a; margin: 0; padding-top: 60px; font-family: 'Segoe UI', sans-serif; }
         
         .toolbar { position: fixed; top: 0; width: 100%; background: #000; padding: 10px; display: flex; justify-content: center; gap: 10px; z-index: 2000; }
-        .toolbar button { padding: 12px; border-radius: 8px; border: none; cursor: pointer; background: #fff; font-weight: bold; }
+        .toolbar button { padding: 10px; border-radius: 8px; border: none; cursor: pointer; background: #fff; font-weight: bold; }
 
-        #paper-container { width: var(--p-width); background: white; box-shadow: 0 0 30px rgba(0,0,0,0.7); margin-bottom: 250px; position: relative; }
+        #paper-container { width: var(--p-width); background: white; margin: 20px auto 250px auto; position: relative; min-height: var(--p-height); box-shadow: 0 0 30px rgba(0,0,0,0.7); }
         
-        .page-break-line { position: absolute; left: 0; width: 100%; height: 2px; background: rgba(255, 0, 0, 0.2); border-top: 1px dashed red; pointer-events: none; z-index: 500; display: flex; justify-content: center; }
-        .page-break-line::after { content: "LIMITE PAGE"; background: red; color: white; font-size: 8px; padding: 2px 5px; height: 10px; }
+        #paper { width: 100%; padding: 15mm; box-sizing: border-box; display: flex; flex-direction: column; }
 
-        #paper { width: 100%; padding: 15mm; box-sizing: border-box; min-height: var(--p-height); display: flex; flex-direction: column; align-items: center; }
-
-        .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; width: 100%; box-sizing: border-box; transition: 0.2s; }
+        .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; box-sizing: border-box; display: block; overflow: hidden; }
         .block.active { border: 2px solid #3498db; background: #f0f8ff; }
         
-        /* GRILLE PHOTO AMÉLIORÉE */
-        .img-grid { 
-            display: grid; 
-            gap: 5px; 
-            width: 100%; 
-            margin: 0 auto;
-        }
-        .img-grid div { width: 100%; overflow: hidden; background: #eee; }
-        .img-grid img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; /* L'image remplit la case sans déformation */
-            display: block;
-        }
+        /* GRILLE PHOTO */
+        .img-grid { display: grid; gap: 8px; width: 100%; }
+        .img-grid div { width: 100%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .img-grid img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* TOOLBAR FIXE */
+        /* TOOLBAR FIXE COMPACTE */
         .controls-panel { 
             display: none; position: fixed; bottom: 0; left: 0; width: 100%;
-            background: #2c3e50; padding: 15px; border-top: 4px solid #3498db;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); z-index: 3000;
-            flex-direction: column; gap: 12px;
+            background: #2c3e50; padding: 10px; border-top: 4px solid #3498db;
+            z-index: 3000; flex-direction: column; gap: 8px;
         }
         .active-block-exists .controls-panel { display: flex; }
         
-        .control-row { display: flex; justify-content: space-around; align-items: center; gap: 5px; }
-        .control-group { display: flex; align-items: center; gap: 8px; }
-        .control-group label { color: white; font-weight: bold; font-size: 10px; text-transform: uppercase; width: 45px; }
+        .control-row { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: nowrap; }
+        .btn-group { display: flex; align-items: center; background: #34495e; border-radius: 10px; padding: 2px; }
+        .btn-group label { color: white; font-size: 9px; padding: 0 8px; text-transform: uppercase; font-weight: bold; }
         
-        .ctrl-btn { width: 50px; height: 50px; background: white; color: #3498db; border: none; border-radius: 10px; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn-action { padding: 10px; border-radius: 8px; border: none; font-weight: bold; height: 50px; cursor: pointer; color: white; }
+        .ctrl-btn { width: 45px; height: 45px; background: white; color: #3498db; border: 1px solid #ddd; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; margin: 2px; }
+        .btn-action { height: 45px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; padding: 0 15px; }
+        .btn-align { background: #f39c12; min-width: 80px; }
         .btn-green { background: #2ecc71; flex-grow: 1; }
-        .btn-red { background: #e74c3c; width: 50px; }
+        .btn-red { background: #e74c3c; width: 45px; }
+
+        /* LIGNE DE COUPE */
+        .page-break-line { position: absolute; left: 0; width: 100%; height: 1px; border-top: 2px dashed rgba(255,0,0,0.3); pointer-events: none; }
 
         @media print {
             .toolbar, .controls-panel, .page-break-line { display: none !important; }
-            #paper-container { box-shadow: none; margin: 0; width: 100%; }
+            #paper-container { margin: 0; box-shadow: none; width: 100%; }
             .block.active { border: none !important; background: none !important; }
-        }
-
-        @media screen and (max-width: 210mm) {
-            #paper-container { transform: scale(calc(100vw / 220mm)); transform-origin: top center; }
         }
     </style>
 </head>
@@ -70,8 +56,8 @@
 <div class="toolbar">
     <button onclick="addBlock('h1')">H1</button>
     <button onclick="addBlock('h2')">H2</button>
-    <button onclick="addBlock('p')">TEXTE</button>
-    <button onclick="addBlock('img')">PHOTOS</button>
+    <button onclick="addBlock('p')">TXT</button>
+    <button onclick="addBlock('img')">IMG</button>
     <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
 </div>
 
@@ -83,23 +69,24 @@
 
 <div id="master-controls" class="controls-panel" onclick="event.stopPropagation()">
     <div class="control-row">
-        <div class="control-group">
-            <label id="label-size">HAUTEUR</label>
+        <div class="btn-group">
+            <label id="label-size">Taille</label>
             <button class="ctrl-btn" onclick="triggerSize(-1)">-</button>
             <button class="ctrl-btn" onclick="triggerSize(1)">+</button>
         </div>
-        <div class="control-group" id="width-control-group">
-            <label>LARGEUR</label>
+        <div class="btn-group">
+            <label>Largeur</label>
             <button class="ctrl-btn" onclick="triggerWidth(-10)">-</button>
             <button class="ctrl-btn" onclick="triggerWidth(10)">+</button>
         </div>
     </div>
     <div class="control-row">
-        <div class="control-group" style="width:100%; justify-content: center;">
-            <label>ESPACE BAS</label>
+        <div class="btn-group">
+            <label>Marge</label>
             <button class="ctrl-btn" onclick="triggerMargin(-5)">-</button>
             <button class="ctrl-btn" onclick="triggerMargin(5)">+</button>
         </div>
+        <button class="btn-action btn-align" onclick="triggerAlign()">ALIGNER</button>
     </div>
     <div class="control-row">
         <button class="btn-action btn-green" onclick="closeAll()">TERMINER</button>
@@ -116,7 +103,8 @@
         div.className = 'block';
         div.dataset.type = type;
         div.dataset.marginBottom = "10"; 
-        div.dataset.widthPercent = "100"; // Largeur par défaut
+        div.dataset.widthPercent = "100";
+        div.dataset.align = "center"; // center, left, right
         
         if(type === 'img') div.dataset.height = "60"; 
         else div.dataset.fontSize = "16"; 
@@ -124,10 +112,8 @@
         div.onclick = function(e) { e.stopPropagation(); selectBlock(this); };
 
         div.innerHTML = type === 'img' ? 
-            `<div class="edit-zone" style="padding:20px; background:#f9f9f9; text-align:center;">
-                <input type="file" multiple accept="image/*" onchange="handleFiles(this)">
-             </div><div class="view-zone img-grid" style="display:none;"></div>` :
-            `<div class="edit-zone" style="padding:10px;"><textarea style="width:100%; height:80px;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:10px; margin-top:5px; background:#27ae60; color:white; border:none; border-radius:5px;">VALIDER</button></div><div class="view-zone" style="display:none;"></div>`;
+            `<div class="edit-zone" style="padding:15px; text-align:center;"><input type="file" multiple accept="image/*" onchange="handleFiles(this)"></div><div class="view-zone img-grid" style="display:none;"></div>` :
+            `<div class="edit-zone" style="padding:10px;"><textarea style="width:100%; height:60px;"></textarea><button onclick="validateText(event, this)" style="width:100%; padding:10px; margin-top:5px; background:#27ae60; color:white; border:none;">OK</button></div><div class="view-zone" style="display:none;"></div>`;
 
         paper.appendChild(div);
     }
@@ -148,7 +134,7 @@
                 const wrap = document.createElement('div');
                 wrap.innerHTML = `<img src="${e.target.result}">`;
                 view.appendChild(wrap);
-                updatePhotoStyles(block);
+                applyStyles(block);
             };
             reader.readAsDataURL(file);
         });
@@ -176,7 +162,7 @@
         activeBlock = el;
         el.classList.add('active');
         document.body.classList.add('active-block-exists');
-        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'HAUTEUR' : 'TAILLE';
+        document.getElementById('label-size').innerText = el.dataset.type === 'img' ? 'Haut.' : 'Taille';
     }
 
     function closeAll() {
@@ -189,16 +175,15 @@
         if(!activeBlock) return;
         if (activeBlock.dataset.type === 'img') {
             activeBlock.dataset.height = Math.max(10, parseFloat(activeBlock.dataset.height) + (delta * 10));
-            updatePhotoStyles(activeBlock);
         } else {
             activeBlock.dataset.fontSize = Math.max(8, parseFloat(activeBlock.dataset.fontSize) + (delta * 2));
-            applyStyles(activeBlock);
         }
+        applyStyles(activeBlock);
     }
 
     function triggerWidth(delta) {
         if(!activeBlock) return;
-        activeBlock.dataset.widthPercent = Math.min(100, Math.max(20, parseFloat(activeBlock.dataset.widthPercent) + delta));
+        activeBlock.dataset.widthPercent = Math.min(100, Math.max(10, parseFloat(activeBlock.dataset.widthPercent) + delta));
         applyStyles(activeBlock);
     }
 
@@ -208,25 +193,30 @@
         applyStyles(activeBlock);
     }
 
-    function applyStyles(block) {
-        block.style.width = block.dataset.widthPercent + "%";
-        block.style.marginBottom = block.dataset.marginBottom + "px";
-        if(block.dataset.type !== 'img') {
-            const textEl = block.querySelector('.view-zone').firstElementChild;
-            if(textEl) textEl.style.fontSize = block.dataset.fontSize + "pt";
-        } else {
-            updatePhotoStyles(block);
-        }
+    function triggerAlign() {
+        if(!activeBlock) return;
+        const states = ['left', 'center', 'right'];
+        let idx = states.indexOf(activeBlock.dataset.align);
+        activeBlock.dataset.align = states[(idx + 1) % 3];
+        applyStyles(activeBlock);
     }
 
-    function updatePhotoStyles(block) {
-        const view = block.querySelector('.view-zone');
-        const containers = view.querySelectorAll('div');
-        containers.forEach(c => {
-            c.style.height = block.dataset.height + "mm";
-        });
+    function applyStyles(block) {
+        // Alignement
+        const align = block.dataset.align;
+        block.style.marginLeft = (align === 'right' || align === 'center') ? 'auto' : '0';
+        block.style.marginRight = (align === 'left' || align === 'center') ? 'auto' : '0';
+        
         block.style.width = block.dataset.widthPercent + "%";
         block.style.marginBottom = block.dataset.marginBottom + "px";
+
+        if(block.dataset.type === 'img') {
+            const divs = block.querySelectorAll('.img-grid div');
+            divs.forEach(d => d.style.height = block.dataset.height + "mm");
+        } else {
+            const textEl = block.querySelector('.view-zone').firstElementChild;
+            if(textEl) textEl.style.fontSize = block.dataset.fontSize + "pt";
+        }
     }
 
     function triggerDelete() {
