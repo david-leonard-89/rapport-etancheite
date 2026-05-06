@@ -9,11 +9,9 @@
     <meta name="theme-color" content="#000000">
     <title>Expert Rapporteur</title>
     <style>
-        * {
-    -webkit-print-color-adjust: exact !important; /* Pour Chrome/Safari */
-    print-color-adjust: exact !important;         /* Standard */
-        }
-        
+        /* FORCE L'AFFICHAGE DES COULEURS AU PDF */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
         :root { 
             --p-width: 210mm; --p-height: 297mm; --blue: #3498db; --dark: #2c3e50; 
             --galien-orange: #ff8f00;
@@ -31,12 +29,12 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.7);
             zoom: 0.46; min-height: var(--p-height); overflow: hidden;
         }
-        #paper { width: 100%; padding: 15mm; box-sizing: border-box; z-index: 2; position: relative; display: flex; flex-direction: column; min-height: 297mm; }
+        #paper { width: 100%; padding: 15mm; box-sizing: border-box; z-index: 2; position: relative; display: flex; flex-direction: column; }
 
         /* HEADER DESIGN (VAGUE ORANGE/NOIR) */
         .pdf-header { 
             display: none; position: absolute; top: -15mm; left: -10%; width: 120%; height: 80mm; 
-            background: linear-gradient(100deg, var(--galien-orange) 35%, #000000 85%); 
+            background: linear-gradient(100deg, var(--galien-orange) 35%, #000000 85%) !important; 
             transform: rotate(-3deg); border-bottom-left-radius: 40% 20%; border-bottom-right-radius: 60% 40%; z-index: 1; 
         }
         .logo-wrap { display: none; position: absolute; top: 15mm; right: 15mm; z-index: 10; }
@@ -62,7 +60,7 @@
         .img-grid img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #ddd; }
         .img-caption { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 10px; font-size: 14px; border-radius: 4px; pointer-events: none; }
 
-        /* TOOLBAR BAS (TAILLES ÉGALES) */
+        /* TOOLBAR BAS */
         .controls-panel { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); border-top: 4px solid var(--blue); z-index: 3000; padding: 15px; flex-direction: column; gap: 10px; box-sizing: border-box; }
         .active-block-exists .controls-panel { display: flex; }
         .control-row { display: flex; width: 100%; gap: 10px; }
@@ -76,10 +74,10 @@
 
         @media print {
             .toolbar, .controls-panel, .page-break-line, .edit-zone { display: none !important; }
-            #paper-container { zoom: 1 !important; width: 210mm; box-shadow: none; position: relative; }
+            #paper-container { zoom: 1 !important; width: 210mm; box-shadow: none; position: relative; min-height: auto; }
+            #paper { padding-top: 85mm !important; min-height: auto; }
             .pdf-header, .logo-wrap, .pdf-footer { display: block; }
             .logo-wrap { display: flex; }
-            #paper { padding-top: 85mm !important; }
         }
     </style>
 </head>
@@ -107,7 +105,6 @@
             Mail : contact.galientoiture@gmail.com | Tel : 04 78 23 89 29
         </div>
         <div id="break-1" class="page-break-line" style="top: 297mm;"></div>
-        <div id="break-2" class="page-break-line" style="top: 594mm;"></div>
     </div>
 </div>
 
@@ -240,12 +237,10 @@
     function checkPages() {
         const paper = document.getElementById('paper');
         const break1 = document.getElementById('break-1');
-        const break2 = document.getElementById('break-2');
         const pxToMm = 0.264583;
         const h = paper.scrollHeight * pxToMm;
-        // On ne montre les lignes que si le contenu dépasse réellement une page
-        break1.style.display = h > 297 ? 'flex' : 'none';
-        break2.style.display = h > 594 ? 'flex' : 'none';
+        // On ne montre la ligne rouge que si ça dépasse 240mm (presque une page pleine)
+        break1.style.display = h > 240 ? 'flex' : 'none';
     }
 
     function selectBlock(el) {
