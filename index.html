@@ -7,16 +7,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <title>Expert Rapporteur - Galien Toiture</title>
+    <title>Expert Rapporteur</title>
     <style>
         :root { 
-            --p-width: 210mm; 
-            --p-height: 297mm; 
-            --blue: #3498db; 
-            --dark: #2c3e50; 
+            --p-width: 210mm; --p-height: 297mm; --blue: #3498db; --dark: #2c3e50; 
             --galien-orange: #ff8f00;
         }
-        
         body { background: #1a1a1a; margin: 0; padding-top: 70px; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
 
         /* TOOLBAR HAUT */
@@ -30,22 +26,16 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.7);
             zoom: 0.46; min-height: var(--p-height); overflow: hidden;
         }
-        #paper { width: 100%; padding: 15mm; box-sizing: border-box; z-index: 2; position: relative; display: flex; flex-direction: column; }
+        #paper { width: 100%; padding: 15mm; box-sizing: border-box; z-index: 2; position: relative; display: flex; flex-direction: column; min-height: 297mm; }
 
-        /* HEADER GALIEN (DESIGN VAGUE) */
+        /* HEADER DESIGN (VAGUE ORANGE/NOIR) */
         .pdf-header { 
             display: none; position: absolute; top: -15mm; left: -10%; width: 120%; height: 80mm; 
             background: linear-gradient(100deg, var(--galien-orange) 35%, #000000 85%); 
-            transform: rotate(-3deg);
-            border-bottom-left-radius: 40% 20%; border-bottom-right-radius: 60% 40%;
-            z-index: 1; 
+            transform: rotate(-3deg); border-bottom-left-radius: 40% 20%; border-bottom-right-radius: 60% 40%; z-index: 1; 
         }
-        .logo-wrap {
-            display: none; position: absolute; top: 15mm; right: 15mm; z-index: 10;
-        }
-        .logo-wrap img { 
-            max-height: 35mm; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
-        }
+        .logo-wrap { display: none; position: absolute; top: 15mm; right: 15mm; z-index: 10; }
+        .logo-wrap img { max-height: 35mm; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
         .pdf-footer { 
             display: none; position: fixed; bottom: 0; width: 100%; padding: 15px 0; 
@@ -53,31 +43,31 @@
             background: white; line-height: 1.5; z-index: 100;
         }
 
-        /* LIGNES A4 */
-        .page-break-line { position: absolute; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.15); border-top: 2px dashed red; z-index: 500; display: none; justify-content: center; }
+        /* LIGNES A4 DYNAMIQUES */
+        .page-break-line { position: absolute; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.2); border-top: 2px dashed red; z-index: 500; display: none; justify-content: center; }
         .page-break-line::after { content: "LIMITE PAGE"; background: red; color: white; font-size: 10px; padding: 2px 8px; border-radius: 0 0 5px 5px; font-weight: bold; }
 
         /* BLOCS */
         .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; }
-        .block.active { border: 3px solid var(--blue); background: #f0f8ff; }
-        .edit-zone { display: flex; flex-direction: column; gap: 10px; background: #f4f4f4; padding: 15px; border-radius: 8px; }
-        textarea { width: 100%; border: 1px solid #ccc; padding: 10px; font-size: 18px; border-radius: 5px; box-sizing: border-box; min-height: 80px; }
+        .block.active { border: 4px solid var(--blue); background: #f0f8ff; }
+        .edit-zone { display: flex; flex-direction: column; gap: 15px; background: #f4f4f4; padding: 20px; border-radius: 10px; }
+        textarea { width: 100%; border: 1px solid #ccc; padding: 15px; font-size: 20px; border-radius: 8px; box-sizing: border-box; }
         
-        .img-grid { display: grid; gap: 5px; width: 100%; grid-template-columns: repeat(var(--cols, 1), 1fr); position: relative; }
+        .img-grid { display: grid; gap: 8px; width: 100%; grid-template-columns: repeat(var(--cols, 1), 1fr); position: relative; }
         .img-grid img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #ddd; }
-        .img-caption { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 8px; font-size: 12px; border-radius: 4px; pointer-events: none; }
+        .img-caption { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.8); color: white; padding: 4px 10px; font-size: 14px; border-radius: 4px; pointer-events: none; }
 
-        /* CONTROLES BAS */
-        .controls-panel { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); border-top: 4px solid var(--blue); z-index: 3000; padding: 10px; flex-direction: column; gap: 8px; box-sizing: border-box; }
+        /* TOOLBAR BAS (TAILLES ÉGALES) */
+        .controls-panel { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); border-top: 4px solid var(--blue); z-index: 3000; padding: 15px; flex-direction: column; gap: 10px; box-sizing: border-box; }
         .active-block-exists .controls-panel { display: flex; }
-        .control-row { display: flex; width: 100%; gap: 8px; }
-        .btn-group { display: flex; flex: 1; align-items: center; background: #34495e; border-radius: 8px; overflow: hidden; height: 50px; }
-        .btn-group label { color: white; font-size: 9px; flex: 1; text-align: center; font-weight: bold; }
-        .ctrl-btn { width: 50px; height: 100%; background: white; border: none; font-size: 20px; font-weight: bold; color: var(--blue); }
-        .btn-action { height: 50px; border-radius: 8px; border: none; font-weight: bold; color: white; flex: 1; font-size: 10px; text-transform: uppercase; }
+        .control-row { display: flex; width: 100%; gap: 10px; }
+        .btn-group { display: flex; flex: 1; align-items: center; background: #34495e; border-radius: 10px; overflow: hidden; height: 60px; }
+        .btn-group label { color: white; font-size: 10px; flex: 1; text-align: center; font-weight: bold; }
+        .ctrl-btn { width: 60px; height: 100%; background: white; border: none; font-size: 20px; font-weight: bold; color: var(--blue); }
+        .btn-action { height: 60px; border-radius: 10px; border: none; font-weight: bold; color: white; flex: 1; font-size: 11px; text-transform: uppercase; }
 
-        h1, h2, p { margin: 0; line-height: 1.3; }
-        h1 { font-size: 28pt; } h2 { font-size: 20pt; } p { font-size: 12pt; white-space: pre-wrap; }
+        h1, h2, p { margin: 0; line-height: 1.2; }
+        h1 { font-size: 28pt; } h2 { font-size: 20pt; } p { font-size: 12pt; white-space: pre-wrap; line-height: 1.4; }
 
         @media print {
             .toolbar, .controls-panel, .page-break-line, .edit-zone { display: none !important; }
@@ -91,8 +81,8 @@
 <body onclick="closeAll()">
 
 <div class="toolbar">
-    <button onclick="addBlock('h1')">TITRE</button>
-    <button onclick="addBlock('h2')">Ss-TITRE</button>
+    <button onclick="addBlock('h1')"><b style="font-size:18px">Aa</b></button>
+    <button onclick="addBlock('h2')"><b style="font-size:14px">Aa</b></button>
     <button onclick="addBlock('p')">TEXTE</button>
     <button onclick="document.getElementById('hidden-file').click()">IMG</button>
     <button style="background:#27ae60; color:white" onclick="window.print()">PDF</button>
@@ -104,7 +94,7 @@
     <div id="paper-container">
         <div class="pdf-header"></div>
         <div class="logo-wrap">
-            <img src="1000036929.jpg" alt="Logo">
+            <img src="Screenshot_2026-05-06-08-39-13-447_com.android.chrome-edit.jpg" alt="Logo">
         </div>
         <div id="paper"></div>
         <div class="pdf-footer">
@@ -139,7 +129,7 @@
     </div>
     <div class="control-row">
         <button id="btn-note" class="btn-action" style="background:#9b59b6" onclick="triggerNote()">ANNOTER</button>
-        <button class="btn-action" style="background:#2ecc71" onclick="closeAll()">OK</button>
+        <button class="btn-action" style="background:#2ecc71" onclick="closeAll()">TERMINER</button>
         <button class="btn-action" style="background:#e74c3c" onclick="triggerDelete()">SUPPR</button>
     </div>
 </div>
@@ -161,7 +151,7 @@
 
         const isTitle = (type === 'h1' || type === 'h2');
         div.innerHTML = `<div class="edit-zone">
-            <textarea placeholder="Texte..." onkeydown="${isTitle ? "if(event.key==='Enter'){event.preventDefault(); validateText(event, this)}" : ''}"></textarea>
+            <textarea placeholder="Saisir..." onkeydown="${isTitle ? "if(event.key==='Enter'){event.preventDefault(); validateText(event, this)}" : ''}"></textarea>
             ${type === 'p' ? '<button class="btn-action" style="background:#2ecc71" onclick="validateText(event, this)">VALIDER</button>' : ''}
         </div><div class="view-zone" style="display:none;"></div>`;
 
@@ -214,7 +204,7 @@
 
     function triggerNote() {
         if(!activeBlock || activeBlock.dataset.type !== 'img') return;
-        const note = prompt("Remarque :");
+        const note = prompt("Remarque sur la photo :");
         if(note) {
             let caption = activeBlock.querySelector('.img-caption');
             if(!caption) {
@@ -239,15 +229,18 @@
             const el = block.querySelector('.view-zone').firstElementChild;
             if(el) el.style.fontSize = block.dataset.fontSize + "pt";
         }
+        checkPages();
     }
 
     function checkPages() {
         const paper = document.getElementById('paper');
         const break1 = document.getElementById('break-1');
         const break2 = document.getElementById('break-2');
-        const h = paper.offsetHeight * 0.264583;
-        break1.style.display = h > 240 ? 'flex' : 'none';
-        break2.style.display = h > 540 ? 'flex' : 'none';
+        const pxToMm = 0.264583;
+        const h = paper.scrollHeight * pxToMm;
+        // On ne montre les lignes que si le contenu dépasse réellement une page
+        break1.style.display = h > 297 ? 'flex' : 'none';
+        break2.style.display = h > 594 ? 'flex' : 'none';
     }
 
     function selectBlock(el) {
@@ -292,7 +285,7 @@
     }
 
     function triggerDelete() {
-        if(activeBlock && confirm('Supprimer ?')) { activeBlock.remove(); closeAll(); checkPages(); }
+        if(activeBlock && confirm('Supprimer ce bloc ?')) { activeBlock.remove(); closeAll(); checkPages(); }
     }
 </script>
 </body>
