@@ -14,7 +14,8 @@
             --p-height: 297mm; 
             --blue: #3498db; 
             --dark: #2c3e50; 
-            --galien-gradient: linear-gradient(135deg, #6a1b9a 0%, #ff8f00 100%);
+            /* Dégradé Orange vers Noir */
+            --galien-gradient: linear-gradient(100deg, #ff8f00 30%, #000000 90%);
         }
         
         body { 
@@ -37,30 +38,37 @@
         #paper-container { 
             width: var(--p-width); background: white; position: relative;
             box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            zoom: 0.46; min-height: var(--p-height);
+            zoom: 0.46; min-height: var(--p-height); overflow: hidden;
         }
         #paper { 
             width: 100%; padding: 15mm; box-sizing: border-box; 
             display: flex; flex-direction: column; z-index: 2; position: relative;
         }
 
-        /* TEMPLATE PDF (CACHÉ SUR L'APP) */
+        /* NOUVEAU DESIGN HEADER (STYLE GALIEN) */
         .pdf-header { 
-            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 70mm; 
-            background: var(--galien-gradient); border-bottom-left-radius: 100px 30px; 
-            border-bottom-right-radius: 100px 30px; z-index: 1; justify-content: center; align-items: center;
+            display: none; position: absolute; top: -10mm; left: -10%; width: 120%; height: 75mm; 
+            background: var(--galien-gradient); 
+            transform: rotate(-3deg);
+            border-bottom-left-radius: 50% 20%; 
+            border-bottom-right-radius: 50% 40%;
+            z-index: 1; 
         }
-        .pdf-header img { 
-            max-height: 40mm; background: white; padding: 15px; border-radius: 20px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
+        .logo-wrap {
+            display: none; position: absolute; top: 15mm; right: 15mm; z-index: 10;
         }
+        .logo-wrap img { 
+            max-height: 35mm; background: white; padding: 10px; border-radius: 12px; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3); 
+        }
+
         .pdf-footer { 
             display: none; position: fixed; bottom: 0; width: 100%; padding: 15px 0; 
-            text-align: center; font-size: 10pt; color: #444; border-top: 1px solid #ddd; 
+            text-align: center; font-size: 10pt; color: #444; border-top: 2px solid #ff8f00; 
             background: white; line-height: 1.5; z-index: 10;
         }
 
-        /* LIGNES A4 DYNAMIQUES */
+        /* LIGNES A4 */
         .page-break-line { 
             position: absolute; left: 0; width: 100%; height: 2px; 
             background: rgba(255, 0, 0, 0.2); border-top: 2px dashed red; 
@@ -74,14 +82,13 @@
         /* BLOCS */
         .block { position: relative; margin-bottom: 10px; border: 2px solid transparent; }
         .block.active { border: 4px solid var(--blue); background: #f0f8ff; }
-        
         .edit-zone { display: flex; flex-direction: column; gap: 15px; background: #f4f4f4; padding: 20px; border-radius: 10px; }
         textarea { width: 100%; border: 1px solid #ccc; padding: 15px; font-size: 20px; border-radius: 8px; box-sizing: border-box; }
         
         .img-grid { display: grid; gap: 8px; width: 100%; grid-template-columns: repeat(var(--cols, 1), 1fr); position: relative; }
         .img-grid img { width: 100%; height: 100%; object-fit: cover; border: 1px solid #ddd; }
         .img-caption { 
-            position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); 
+            position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.8); 
             color: white; padding: 4px 10px; font-size: 14px; border-radius: 4px; pointer-events: none; 
         }
 
@@ -105,9 +112,9 @@
         @media print {
             .toolbar, .controls-panel, .page-break-line, .edit-zone { display: none !important; }
             #paper-container { zoom: 1 !important; width: 210mm; box-shadow: none; position: relative; }
-            .pdf-header { display: flex; }
-            .pdf-footer { display: block; }
-            #paper { padding-top: 80mm !important; }
+            .pdf-header, .logo-wrap, .pdf-footer { display: block; }
+            .logo-wrap { display: flex; }
+            #paper { padding-top: 85mm !important; }
         }
     </style>
 </head>
@@ -125,14 +132,15 @@
 
 <div id="viewport">
     <div id="paper-container">
-        <div class="pdf-header">
-            <img src="Screenshot_2026-05-06-08-39-13-447_com.android.chrome-edit.jpg" alt="Logo Galien Toiture">
+        <div class="pdf-header"></div>
+        <div class="logo-wrap">
+            <img src="1000036929.jpg" alt="Logo Galien Toiture">
         </div>
 
         <div id="paper"></div>
 
         <div class="pdf-footer">
-            <b style="color:#6a1b9a">Galien Toiture</b> - 1 rue Jacques Monod, 69680 Chassieu<br>
+            <b style="color:#ff8f00">Galien Toiture</b> - 1 rue Jacques Monod, 69680 Chassieu<br>
             Mail : contact.galientoiture@gmail.com | Tel : 04 78 23 89 29
         </div>
 
@@ -277,8 +285,8 @@
         const break2 = document.getElementById('break-2');
         const pxToMm = 0.264583;
         const currentHeight = paper.offsetHeight * pxToMm;
-        break1.style.display = currentHeight > 250 ? 'flex' : 'none';
-        break2.style.display = currentHeight > 550 ? 'flex' : 'none';
+        break1.style.display = currentHeight > 240 ? 'flex' : 'none';
+        break2.style.display = currentHeight > 540 ? 'flex' : 'none';
     }
 
     function selectBlock(el) {
